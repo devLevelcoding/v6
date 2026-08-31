@@ -1,0 +1,45 @@
+?   	github.com/levelcodingdev/gostream/cmd/gostreamd	[no test files]
+PASS
+ok  	github.com/levelcodingdev/gostream/internal/debug	0.053s
+goos: windows
+goarch: amd64
+pkg: github.com/levelcodingdev/gostream/internal/hub
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkPublishFanout/100-16 	   20401	     27916 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublishFanout/100-16 	   23650	     24318 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublishFanout/100-16 	   22014	     26362 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublishFanout/1000-16         	    2362	    253068 ns/op	      10 B/op	       0 allocs/op
+BenchmarkPublishFanout/1000-16         	    2378	    262334 ns/op	       8 B/op	       0 allocs/op
+BenchmarkPublishFanout/1000-16         	    2294	    285358 ns/op	       8 B/op	       0 allocs/op
+BenchmarkPublishFanout/10000-16        	     180	   3249406 ns/op	    1737 B/op	       0 allocs/op
+BenchmarkPublishFanout/10000-16        	     188	   3105681 ns/op	    1660 B/op	       0 allocs/op
+BenchmarkPublishFanout/10000-16        	     189	   3205703 ns/op	    1653 B/op	       0 allocs/op
+BenchmarkPublishFanout/50000-16        	      13	  41388308 ns/op	  167079 B/op	       1 allocs/op
+BenchmarkPublishFanout/50000-16        	      15	  37390413 ns/op	  144787 B/op	       1 allocs/op
+BenchmarkPublishFanout/50000-16        	      14	  37306143 ns/op	  155145 B/op	       1 allocs/op
+BenchmarkPublishAllSlow-16             	    7924	    103293 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublishAllSlow-16             	    7212	     97698 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPublishAllSlow-16             	    6802	     86457 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSubscribeChurn-16             	  497767	      1352 ns/op	    1024 B/op	       9 allocs/op
+BenchmarkSubscribeChurn-16             	  723169	      1158 ns/op	    1024 B/op	       9 allocs/op
+BenchmarkSubscribeChurn-16             	  481266	      1127 ns/op	    1024 B/op	       9 allocs/op
+PASS
+ok  	github.com/levelcodingdev/gostream/internal/hub	13.170s
+PASS
+ok  	github.com/levelcodingdev/gostream/internal/ingest	0.034s
+PASS
+ok  	github.com/levelcodingdev/gostream/internal/proto	0.024s
+PASS
+ok  	github.com/levelcodingdev/gostream/internal/server	0.038s
+PASS
+ok  	github.com/levelcodingdev/gostream/internal/uid	0.026s
+goos: windows
+goarch: amd64
+pkg: github.com/levelcodingdev/gostream/internal/ws
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkReadFrame-16    	    2671	    223119 ns/op	    4416 B/op	       5 allocs/op
+BenchmarkReadFrame-16    	    2764	    222038 ns/op	    4416 B/op	       5 allocs/op
+BenchmarkReadFrame-16    	    2707	    231710 ns/op	    4416 B/op	       5 allocs/op
+PASS
+ok  	github.com/levelcodingdev/gostream/internal/ws	1.882s
+?   	github.com/levelcodingdev/gostream/internal/wstest	[no test files]

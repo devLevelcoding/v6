@@ -1,0 +1,14 @@
+/gogated
+/gogated.exe
+*.test
+*.out
+.env
+/dist/
+
+# build artifacts
+*.exe
+*.test
+*.test.exe
+*.out
+*.prof
+dist/

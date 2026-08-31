@@ -1,0 +1,16 @@
+/gorenderd
+/gorenderd.exe
+*.test
+*.out
+/out/
+/data/
+.env
+/dist/
+
+# build artifacts
+*.exe
+*.test
+*.test.exe
+*.out
+*.prof
+dist/

@@ -1,0 +1,57 @@
+?   	github.com/levelcodingdev/gogate/cmd/gogated	[no test files]
+goos: windows
+goarch: amd64
+pkg: github.com/levelcodingdev/gogate/internal/auth
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkHS256Verify-16    	  410210	      2823 ns/op	    1680 B/op	      36 allocs/op
+BenchmarkHS256Verify-16    	  419598	      2874 ns/op	    1680 B/op	      36 allocs/op
+BenchmarkHS256Verify-16    	  338108	      3422 ns/op	    1680 B/op	      36 allocs/op
+BenchmarkHS256Verify-16    	  305830	      4491 ns/op	    1680 B/op	      36 allocs/op
+BenchmarkHS256Verify-16    	  288064	      4029 ns/op	    1680 B/op	      36 allocs/op
+BenchmarkHS256Verify-16    	  403138	      4535 ns/op	    1680 B/op	      36 allocs/op
+PASS
+ok  	github.com/levelcodingdev/gogate/internal/auth	7.921s
+PASS
+ok  	github.com/levelcodingdev/gogate/internal/bridge	0.034s
+PASS
+ok  	github.com/levelcodingdev/gogate/internal/cache	0.034s
+PASS
+ok  	github.com/levelcodingdev/gogate/internal/debug	0.061s
+PASS
+ok  	github.com/levelcodingdev/gogate/internal/proxy	0.041s
+PASS
+ok  	github.com/levelcodingdev/gogate/internal/ratelimit	0.058s
+PASS
+ok  	github.com/levelcodingdev/gogate/internal/route	0.030s
+goos: windows
+goarch: amd64
+pkg: github.com/levelcodingdev/gogate/internal/server
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkGatewayProxyPlain-16          	   14575	     82004 ns/op	   14146 B/op	     110 allocs/op
+BenchmarkGatewayProxyPlain-16          	   14656	     81940 ns/op	   14107 B/op	     110 allocs/op
+BenchmarkGatewayProxyPlain-16          	   13682	     92414 ns/op	   14137 B/op	     110 allocs/op
+BenchmarkGatewayProxyPlain-16          	    9375	    107629 ns/op	   14118 B/op	     110 allocs/op
+BenchmarkGatewayProxyPlain-16          	   10000	    108915 ns/op	   14132 B/op	     110 allocs/op
+BenchmarkGatewayProxyPlain-16          	   10000	    105933 ns/op	   14131 B/op	     110 allocs/op
+BenchmarkGatewayProxyAuth-16           	    9488	    124636 ns/op	   16966 B/op	     160 allocs/op
+BenchmarkGatewayProxyAuth-16           	    9813	    123207 ns/op	   16911 B/op	     160 allocs/op
+BenchmarkGatewayProxyAuth-16           	    9775	    124109 ns/op	   16924 B/op	     160 allocs/op
+BenchmarkGatewayProxyAuth-16           	    9562	    127122 ns/op	   16870 B/op	     160 allocs/op
+BenchmarkGatewayProxyAuth-16           	    8385	    130695 ns/op	   16880 B/op	     160 allocs/op
+BenchmarkGatewayProxyAuth-16           	    9663	    121550 ns/op	   16948 B/op	     160 allocs/op
+BenchmarkGatewayProxyRateLimited-16    	   10000	    106258 ns/op	   14120 B/op	     110 allocs/op
+BenchmarkGatewayProxyRateLimited-16    	   10000	    104502 ns/op	   14139 B/op	     110 allocs/op
+BenchmarkGatewayProxyRateLimited-16    	   10000	    105488 ns/op	   14175 B/op	     110 allocs/op
+BenchmarkGatewayProxyRateLimited-16    	   11360	    105051 ns/op	   14129 B/op	     110 allocs/op
+BenchmarkGatewayProxyRateLimited-16    	   10000	    107518 ns/op	   14160 B/op	     110 allocs/op
+BenchmarkGatewayProxyRateLimited-16    	   10000	    107785 ns/op	   14165 B/op	     110 allocs/op
+BenchmarkGatewayCacheHit-16            	  246249	      5911 ns/op	    6413 B/op	      27 allocs/op
+BenchmarkGatewayCacheHit-16            	  263510	      6110 ns/op	    6413 B/op	      27 allocs/op
+BenchmarkGatewayCacheHit-16            	  185001	      6121 ns/op	    6412 B/op	      27 allocs/op
+BenchmarkGatewayCacheHit-16            	  208303	      6173 ns/op	    6412 B/op	      27 allocs/op
+BenchmarkGatewayCacheHit-16            	  168110	      6166 ns/op	    6412 B/op	      27 allocs/op
+BenchmarkGatewayCacheHit-16            	  202456	      6261 ns/op	    6412 B/op	      27 allocs/op
+PASS
+ok  	github.com/levelcodingdev/gogate/internal/server	28.286s
+PASS
+ok  	github.com/levelcodingdev/gogate/internal/uid	0.034s

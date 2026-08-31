@@ -1,0 +1,32 @@
+?   	github.com/levelcodingdev/gorender/cmd/gorenderd	[no test files]
+PASS
+ok  	github.com/levelcodingdev/gorender/internal/events	0.026s
+PASS
+ok  	github.com/levelcodingdev/gorender/internal/job	0.023s
+PASS
+ok  	github.com/levelcodingdev/gorender/internal/media	0.027s
+goos: windows
+goarch: amd64
+pkg: github.com/levelcodingdev/gorender/internal/plan
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkBuildSlideshow/03img-16         	  116859	      3059 ns/op	    3090 B/op	      42 allocs/op
+BenchmarkBuildSlideshow/12img-16         	   29487	     12414 ns/op	   14042 B/op	     155 allocs/op
+BenchmarkBuildSlideshow/40img-16         	    8511	     42432 ns/op	   56036 B/op	     497 allocs/op
+PASS
+ok  	github.com/levelcodingdev/gorender/internal/plan	1.112s
+goos: windows
+goarch: amd64
+pkg: github.com/levelcodingdev/gorender/internal/queue
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkPushClaimSerial-16      	 6394292	        55.06 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPushClaimParallel-16    	 1401798	       252.1 ns/op	       0 B/op	       0 allocs/op
+PASS
+ok  	github.com/levelcodingdev/gorender/internal/queue	0.991s
+PASS
+ok  	github.com/levelcodingdev/gorender/internal/server	0.033s
+PASS
+ok  	github.com/levelcodingdev/gorender/internal/spec	0.023s
+PASS
+ok  	github.com/levelcodingdev/gorender/internal/uid	0.023s
+PASS
+ok  	github.com/levelcodingdev/gorender/internal/worker	0.031s

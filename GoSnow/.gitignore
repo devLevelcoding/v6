@@ -1,0 +1,14 @@
+/gosnowd
+/gosnowd.exe
+/_data/
+*.out
+*.test
+/dist/
+
+# build artifacts
+*.exe
+*.test
+*.test.exe
+*.out
+*.prof
+dist/

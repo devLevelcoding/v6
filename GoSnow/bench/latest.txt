@@ -1,0 +1,23 @@
+?   	github.com/levelcodingdev/gosnow/cmd/gosnowd	[no test files]
+goos: windows
+goarch: amd64
+pkg: github.com/levelcodingdev/gosnow/internal/catalog
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkTableLookup-16    	 5538460	        66.25 ns/op	       0 B/op	       0 allocs/op
+BenchmarkTablesList-16     	  157449	      2206 ns/op	     896 B/op	       1 allocs/op
+PASS
+ok  	github.com/levelcodingdev/gosnow/internal/catalog	0.747s
+goos: windows
+goarch: amd64
+pkg: github.com/levelcodingdev/gosnow/internal/query
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkExecuteSelectLiteral-16    	 2307514	       159.8 ns/op	     168 B/op	       5 allocs/op
+BenchmarkExecuteShow-16             	 1486747	       248.9 ns/op	     200 B/op	       7 allocs/op
+BenchmarkExecuteUnsupported-16      	 1000000	       313.5 ns/op	     272 B/op	       3 allocs/op
+PASS
+ok  	github.com/levelcodingdev/gosnow/internal/query	1.084s
+PASS
+ok  	github.com/levelcodingdev/gosnow/internal/server	0.042s
+PASS
+ok  	github.com/levelcodingdev/gosnow/internal/storage	0.050s
+?   	github.com/levelcodingdev/gosnow/internal/warehouse	[no test files]

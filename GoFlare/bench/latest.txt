@@ -1,0 +1,58 @@
+?   	github.com/levelcodingdev/goflare/cmd/goflared	[no test files]
+PASS
+ok  	github.com/levelcodingdev/goflare/internal/api	0.063s
+PASS
+ok  	github.com/levelcodingdev/goflare/internal/blob	0.051s
+PASS
+ok  	github.com/levelcodingdev/goflare/internal/debug	0.041s
+PASS
+ok  	github.com/levelcodingdev/goflare/internal/edge	0.049s
+goos: windows
+goarch: amd64
+pkg: github.com/levelcodingdev/goflare/internal/event
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkDecode-16    	  161226	      7071 ns/op	    2730 B/op	      51 allocs/op
+BenchmarkDecode-16    	  173022	      7001 ns/op	    2729 B/op	      51 allocs/op
+BenchmarkDecode-16    	  170941	      7981 ns/op	    2729 B/op	      51 allocs/op
+BenchmarkDecode-16    	  120439	      9502 ns/op	    2729 B/op	      51 allocs/op
+BenchmarkDecode-16    	  117990	     10316 ns/op	    2729 B/op	      51 allocs/op
+BenchmarkDecode-16    	  114225	      9461 ns/op	    2729 B/op	      51 allocs/op
+PASS
+ok  	github.com/levelcodingdev/goflare/internal/event	7.197s
+goos: windows
+goarch: amd64
+pkg: github.com/levelcodingdev/goflare/internal/group
+cpu: 11th Gen Intel(R) Core(TM) i7-11800H @ 2.30GHz
+BenchmarkFingerprint-16        	 3111565	       386.0 ns/op	     424 B/op	       9 allocs/op
+BenchmarkFingerprint-16        	 3042543	       391.0 ns/op	     424 B/op	       9 allocs/op
+BenchmarkFingerprint-16        	 3149935	       495.9 ns/op	     424 B/op	       9 allocs/op
+BenchmarkFingerprint-16        	 1841373	       670.9 ns/op	     424 B/op	       9 allocs/op
+BenchmarkFingerprint-16        	 1993464	       630.3 ns/op	     424 B/op	       9 allocs/op
+BenchmarkFingerprint-16        	 1864287	       616.2 ns/op	     424 B/op	       9 allocs/op
+BenchmarkIngestSameIssue-16    	  823270	      1306 ns/op	    1069 B/op	      12 allocs/op
+BenchmarkIngestSameIssue-16    	 1000000	      1223 ns/op	    1068 B/op	      12 allocs/op
+BenchmarkIngestSameIssue-16    	 1000000	      1074 ns/op	    1068 B/op	      12 allocs/op
+BenchmarkIngestSameIssue-16    	 1000000	      1087 ns/op	    1068 B/op	      12 allocs/op
+BenchmarkIngestSameIssue-16    	 1000000	      1228 ns/op	    1068 B/op	      12 allocs/op
+BenchmarkIngestSameIssue-16    	  821653	      1296 ns/op	    1069 B/op	      12 allocs/op
+BenchmarkIngestNewIssues-16    	  400920	      2951 ns/op	    1317 B/op	      23 allocs/op
+BenchmarkIngestNewIssues-16    	  487528	      3162 ns/op	    1501 B/op	      23 allocs/op
+BenchmarkIngestNewIssues-16    	  572592	      2876 ns/op	    1437 B/op	      23 allocs/op
+BenchmarkIngestNewIssues-16    	  524323	      3075 ns/op	    1477 B/op	      23 allocs/op
+BenchmarkIngestNewIssues-16    	  638239	      3330 ns/op	    1394 B/op	      23 allocs/op
+BenchmarkIngestNewIssues-16    	  695332	      3010 ns/op	    1364 B/op	      23 allocs/op
+PASS
+ok  	github.com/levelcodingdev/goflare/internal/group	24.809s
+PASS
+ok  	github.com/levelcodingdev/goflare/internal/ingest	0.070s
+PASS
+ok  	github.com/levelcodingdev/goflare/internal/org	0.035s
+?   	github.com/levelcodingdev/goflare/internal/pg	[no test files]
+?   	github.com/levelcodingdev/goflare/internal/pgtest	[no test files]
+PASS
+ok  	github.com/levelcodingdev/goflare/internal/project	0.034s
+?   	github.com/levelcodingdev/goflare/internal/server	[no test files]
+PASS
+ok  	github.com/levelcodingdev/goflare/internal/snapshot	0.034s
+?   	github.com/levelcodingdev/goflare/internal/ui	[no test files]
+?   	github.com/levelcodingdev/goflare/internal/uid	[no test files]

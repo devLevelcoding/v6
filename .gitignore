@@ -1,0 +1,7 @@
+# This repo (github.com/devLevelcoding/v6) tracks the 5 CoverGo hot-path
+# services + the CoverGo status file. Other V5 trees live elsewhere.
+/GoAdmin/
+/GoPlatform/
+/GoDoc/
+/GoUptime/
+/FinalCOstGcp.md

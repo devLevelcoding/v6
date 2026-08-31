@@ -1,0 +1,15 @@
+/goflared
+/goflared.exe
+*.test
+*.out
+/data/
+.env
+/dist/
+
+# build artifacts
+*.exe
+*.test
+*.test.exe
+*.out
+*.prof
+dist/
