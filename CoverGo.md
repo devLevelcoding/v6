@@ -10,6 +10,9 @@ for each gap, the project that should adopt it and why it fits.
 This is a working checklist. Tick a box when a concept lands in a real service
 (not a `GoPlatform` day exercise) with a test.
 
+**Code:** `github.com/devLevelcoding/v6` (branch `main`) — a monorepo at `F:\V5`
+holding the 5 services + this file. Commit + push after every batch.
+
 **Tracked in LaraCRM:** project **22** · epic **37** ("Go Concept Coverage — 5 V5
 services") · 25 sprints (one per concept) · 98 tasks · progress task **272**.
 Spec: `F:\V5\GoAdmin\laracrmctl\sprints\covergo-concepts.yaml` — edit + re-run
