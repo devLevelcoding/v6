@@ -163,7 +163,73 @@ current toolchain.
 
 ---
 
-## 7. What carries over unchanged
+## 7. Beyond parity — features Instagram structurally can't or won't ship
+
+The V5 stack makes a specific set of things *cheap* that a client-first app has
+to fake or avoid: server-side video composition (GoRender), real-time at scale
+(GoStream), analytics as a user-facing surface (GoSnow), tamper-evident moderation
+(GoFlare's hash chain), and a real event log. That combination opens features
+that aren't just "Instagram but ours."
+
+### Video that's composed on the server, not the phone
+
+| Feature | Why the stack makes it cheap |
+|---|---|
+| **Remix / duet / stitch as one real file** — pick any public reel, GoRender composites your camera PiP or side-by-side and re-encodes a single artifact. Not a client overlay. | GoRender already compiles a filtergraph from a spec; a remix is just `[0:v][1:v]hstack` + `amix`. Content-hash dedup means a popular remix renders once. |
+| **Provenance tree + attribution splits** — every remix records its parent; you can trace "viral reel → remix → remix → X's March original," and X gets a credit line and a revenue cut automatically. | The spec *is* the lineage. GoSnow rolls up "views attributable to each ancestor." |
+| **Templates are filtergraphs** — a creator publishes a template (a GoRender spec with typed slots: "3 clips + 1 photo + your text here"). Followers fill the slots; the server renders deterministically. | Instagram templates are client-side and break across versions. A spec with slots renders identically for everyone, forever. |
+| **Thread-to-reel / article-to-reel** — paste text, get a slideshow reel: `drawtext` per paragraph over generated cards, ken-burns, a song bed. | This is exactly `leadMarketing/generator`'s job, which is *why* GoRender exists. |
+| **Live → instant VOD** — GoRender transcodes the live segments as they arrive; the moment a stream ends the replayable reel already exists, with chapter markers auto-placed at peak-viewer moments. | GoStream carries the live; GoRender's queue drains segments in parallel; GoSnow marks the peaks. |
+| **Auto-recap montages** — "your week in reels": GoRender stitches your top 5 by completion rate into a 15s `xfade` montage with a song, zero effort. | One scheduled GoRender job per user per week; `spec.Weight()` keeps the batch from thrashing the box. |
+| **Deterministic version history** — because a render is a content-hashed spec, "what changed between v2 and v3 of this reel" is a real diff: captions, trim points, song swap. | Nothing to store but the specs. |
+
+### Real-time as the product, not a garnish
+
+| Feature | Why the stack makes it cheap |
+|---|---|
+| **Co-watch rooms** — `room:<id>` syncs playback position across everyone; reactions float over the video; the host can pull a viewer "on stage." | GoStream does ~300k conns/instance at 0 alloc/broadcast — a 10k-person room is nothing. |
+| **Choose-the-ending reels** — a branching reel; viewers vote live on `reel:<id>:vote`, the majority branch plays. GoRender pre-rendered every branch. | Votes are a topic; branches are cached artifacts. |
+| **Reaction heatmap scrubber** — every like-tap publishes its video timestamp; the scrubber shows a live histogram of where people react, and creators see which second lands. | A `reel:<id>:reacts` topic + a GoSnow rollup by `floor(ts)`. |
+| **Ambient friend presence** — "3 friends are watching reels now — tap to join." | GoStream presence on `presence:friends:<userId>`. |
+| **Latency-honest live** — the UI shows your real glass-to-glass delay ("you're 2.1s behind live") instead of pretending it's instant. | GoStream and GoRender timestamps are real; just surface them. |
+
+### Analytics you can see, not just the algorithm
+
+| Feature | Why the stack makes it cheap |
+|---|---|
+| **Public completion rate** — every reel shows "82% watched to the end," not just a like count. Changes what creators optimise for. | GoSnow already computes it for discovery — just expose it. |
+| **"Why am I seeing this?"** — one tap on any discovery reel explains it from the *actual* ranking features: "high completion + 2 mutuals liked it + trending in your city." | The explanation is the GoSnow query's own feature vector. |
+| **Time-travel feed** — "show my feed as it was last Tuesday" / "this account 6 months ago." | The event-sourced core: `replay?upto=N` is already how state is rebuilt. |
+| **Sound-about-to-blow** — trend forecasting from `velocity = Δlikes/Δmin`: "this sound is up 340% in 2h" *before* it saturates. Early-mover edge for creators. | A GoSnow windowed aggregate over the song-usage events. |
+| **Sound-first discovery** — the song catalog is a real service with waveforms and BPM, so you can browse by audio: "reels using this 3-second drop," "reels at 128 BPM." | The catalog already has the metadata; the join is `posts.songId`. |
+| **Bring-your-own-dashboard** — a creator runs sandboxed SQL over their own rows, or exports Parquet. | GoSnow with GoGate RBAC scoping to `author_id = me`. |
+
+### Trust, made transparent
+
+| Feature | Why the stack makes it cheap |
+|---|---|
+| **Public, tamper-evident moderation log** — when a reel is limited the creator sees exactly why and can appeal; aggregate stats are public ("0.3% of reels limited this month"). | GoFlare's audit is a hash chain — altering one entry breaks every later link. |
+| **Timed shadow-limit, not shadowban limbo** — a report spike auto-limits reach for 2h pending review, then auto-restores if cleared. Always a timer, always a reason. | GoFlare's "rate-limit this route" generalised to "limit this reel." |
+| **Rate-limit your own account** — "I'm doomscrolling; cap me at 20 reels/hour today." | GoGate's per-key limiter, opt-in, user-set. |
+| **Consent receipts** — your face or voice in someone's remix triggers a notification and a veto window *before* it publishes. | The provenance tree makes "who is in this" a queryable fact. |
+| **"We blocked 4 scripted follow attempts on your account this week."** | GoFlare edge WAF events, surfaced to the user instead of hidden. |
+
+### Openness
+
+| Feature | Why the stack makes it cheap |
+|---|---|
+| **An account export that actually works** — GoDoc streams a real archive: every reel's source clips, DMs as readable HTML, the follow graph as CSV, the full event log as JSON. Leave without losing anything. | GoDoc is a stateless CSV/HTML/JSON streamer; the event log is already the source of truth. |
+| **Bring-your-own-domain pages** — `marian.page` served through GoGate, your reels as a portfolio, your layout. Link-in-bio, inverted. | GoGate's route store + per-tenant `<slug>.pages.gosocial/*` routing. |
+| **Self-hosted embeds** — an `<iframe>` that streams from your object store, no tracker. | HLS + poster already live in object storage. |
+| **Federated follow** (aspirational) — the event log as an ActivityPub-style outbox; follow someone on another GoSocial instance. | GoGate's HTTP↔queue bridge + the append-only event log are most of an outbox already. |
+| **Conditional / scheduled posting** — "publish this when my last reel hits 10k views." | GoSnow threshold → GoGate queue bridge fires it. |
+
+None of these need a new service — they're recombinations of the five that
+already exist, plus the domain the app already has.
+
+---
+
+## 8. What carries over unchanged
 
 - `internal/social` — the follow graph, DMs, feed projector, `SongID` on a post.
 - `internal/events` — the `EventRecord` / `Apply` / `Rebuild` model; it just gets
