@@ -1,0 +1,14 @@
+/gouptimed
+/gouptimed.exe
+*.test
+*.out
+/data/
+.env
+
+# build artifacts
+*.exe
+*.test
+*.test.exe
+*.out
+*.prof
+dist/

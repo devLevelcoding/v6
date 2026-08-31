@@ -1,0 +1,13 @@
+/godocd
+/godocd.exe
+*.test
+*.out
+.env
+
+# build artifacts
+*.exe
+*.test
+*.test.exe
+*.out
+*.prof
+dist/
