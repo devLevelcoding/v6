@@ -1,0 +1,130 @@
+# CoverGo progress — apply with:
+#   go run . statuses-db sprints/covergo-progress.txt
+# (needs $env:LARACRM_DB_* set — see controlsheellLaracrm.md)
+# status: todo | in_progress | review | done
+
+# --- S0: CI + measurement foundation (2026-08-31) ---
+272 in_progress   # progress tracker (meta)
+273 review        # definition of done — CI foundation
+274 review        # GoGate — race CI + static build + bench+fuzz harness
+275 review        # GoStream — race CI + static build + bench+fuzz harness
+276 review        # GoRender — race CI + static build + bench harness
+277 review        # GoFlare — race CI + static build + bench+fuzz harness
+278 review        # GoSnow — race CI + build matrix + bench+fuzz harness
+
+# --- U23: fuzzing — targets written + wired to CI (nightly + crasher protocol still open) ---
+337 in_progress   # definition of done — fuzzing
+338 review        # GoStream — fuzz the RFC 6455 frame parser
+339 review        # GoGate — fuzz the JWT parser + route matcher
+340 review        # GoFlare — fuzz the event envelope decoder
+341 review        # GoSnow — fuzz the SQL parser
+
+# --- U1: benchmarks — hot-path coverage + benchstat workflow done; CI soft-gate + a few refinements open ---
+279 in_progress   # definition of done — benchmarks (CI gate + keepalive/RAM variants left)
+280 review        # GoGate — proxy path (ProxyPlain/Auth/RateLimited/CacheHit)
+281 review        # GoStream — hub broadcast (fanout sweep 100..50k + slow + churn)
+282 review        # GoRender — plan compile sweep + queue push/claim throughput
+283 review        # GoFlare — fingerprint + ingest (same-issue + new-issues) + decode
+284 review        # GoSnow — catalog lookup/list + statement path benchmarks
+
+# --- U2: profiling — internal/debug (pprof listener) + PROFILING.md done for all 5;
+#         "capture + analyze under realistic load" half of each per-service task remains ---
+285 in_progress   # definition of done — profiling
+286 review        # GoGate — pprof on admin plane + allocation profile (findings: ReverseProxy.copyBuffer 65%)
+287 in_progress   # GoStream — mutex + block profiles (alloc finding done; contention capture needs real ws load)
+288 in_progress   # GoRender — CPU + goroutine profile of the worker pool (listener done, capture pending)
+289 in_progress   # GoFlare — heap profile of the ingest pipeline (listener done, capture pending)
+290 in_progress   # GoSnow — pprof endpoint + scan profile (endpoint done, scan profile after U10)
+
+# --- U7: sync.Pool — GoGate + GoStream done (big wins), GoFlare done (small); GoRender open ---
+302 in_progress   # definition of done — sync.Pool (GoRender leg + GoStream ReadMessage follow-up left)
+303 review        # GoStream — pool Publish []*Client + atomic stats + ws readBuf reuse (0 allocs/op <=10k subs)
+304 review        # GoGate — ReverseProxy.BufferPool + pooled capturingWriter (proxy B/op -58% geomean)
+305 review        # GoFlare — envelope Payload aliases body + pooled rawEvent (Decode 52->51 allocs)
+
+# --- U16: errgroup — GoFlare + GoRender done (fail-fast tests); GoSnow blocked on U10 ---
+317 in_progress   # definition of done — errgroup (GoSnow leg waits on U10)
+318 review        # GoRender — errgroup for buildConcat clip probing (SetLimit + TestConcatProbeFailFast)
+319 todo          # GoSnow — errgroup for parallel partition scan (blocked: needs U10 partitions)
+320 review        # GoFlare — ingest.Pipeline workers under errgroup.WithContext (Wait() returns first error)
+
+# --- U17: singleflight — GoGate done (also fixes a panic-deadlock bug) ---
+321 review        # definition of done — singleflight
+322 review        # GoGate — internal/cache uses singleflight.Group (TestCoalesce + TestFillPanicDoesNotWedge)
+
+# --- U24: testing/synctest — GoFlare + GoRender + GoGate done; GoStream needs a ws.Conn test seam ---
+342 in_progress   # definition of done — synctest (GoStream leg open)
+343 review        # GoGate — cache TestCoalesce -> synctest.Wait (no sleep-20ms race)
+344 todo          # GoStream — ping-loop cadence; needs a ws.Conn test seam (small refactor)
+345 review        # GoRender — queue TestClaimBlocksThenReceives + TestPushCtxCancelWhenFull (exact 20ms)
+
+# --- U18: semaphore — GoRender + GoGate done ---
+323 review        # definition of done — semaphore
+324 review        # GoRender — spec.Weight() + cost-weighted pool admission (TestPoolCostWeightedAdmission)
+325 review        # GoGate — internal/inflight per-route MaxInFlight cap -> 503 (TestMaxInFlightReturns503)
+
+# --- U6: runtime tuning ---
+297 review        # definition of done — runtime tuning (GOMEMLIMIT/GOGC are env-driven; logged at boot)
+298 review        # GoRender — worker default now runtime.GOMAXPROCS(0) (cgroup-aware), not NumCPU
+299 review        # GoGate — debug.LogRuntime logs GOMEMLIMIT/GOGC; tune via env
+300 review        # GoStream — debug.LogRuntime logs GOMEMLIMIT; tune via env
+301 review        # GoSnow — debug.LogRuntime logs GOMEMLIMIT; tune via env
+
+# --- U8: iterators — GoGate done; GoFlare/GoSnow at streaming boundaries (land with U10) ---
+306 in_progress   # definition of done — iterators
+307 todo          # GoSnow — row iteration (deferred: real streaming lands with U10 DuckDB)
+308 todo          # GoFlare — event stream iteration (deferred to event-history boundary)
+309 review        # GoGate — route.MemStore.All() iter.Seq[Route] (TestAllSeqEarlyBreak)
+
+# --- P3: panic/recover — GoRender + GoStream done ---
+350 review        # definition of done — panic/recover
+351 review        # GoRender — Pool.runGuarded recovers a panicking render (TestPoolSurvivesJobPanic)
+352 review        # GoStream — server.guard wraps both conn loops, recovers + kills client (TestGuardContainsPanic)
+
+# --- U4: escape analysis — GoStream done (frame headers no longer heap-alloc); GoGate reviewed ---
+294 in_progress   # definition of done — escape analysis (GoGate proxy findings folded into U7 already)
+295 review        # GoStream — readFrame/writeFrame header scratch -> ~0 allocs/frame (BenchmarkReadFrame)
+296 in_progress   # GoGate — proxy path: main finding (copyBuffer) already fixed in U7; -m output in PROFILING.md
+
+# --- U9: unsafe — GoStream done (7.8x unmask); GoSnow leg waits on U10 Arrow buffers ---
+310 in_progress   # definition of done — unsafe (GoSnow leg needs U10)
+311 review        # GoStream — word-at-a-time frame unmasking via unsafe.Add + purego fallback (BenchmarkMaskBytes 7.8x)
+312 todo          # GoSnow — zero-copy Parquet/Arrow views (blocked: needs U10)
+
+# --- P8: io composition — GoRender done ---
+359 in_progress   # definition of done — io composition (GoFlare/GoDoc legs deferred)
+360 review        # GoRender — bounded tailWriter for ffmpeg stderr + io.MultiWriter/TeeReader to debug log
+361 todo          # GoFlare — capture request body without buffering (error ingest needs the full body; low fit)
+362 todo          # GoRender upload streaming (lands with the upload path)
+
+# --- P9: reverse-proxy depth — GoGate + GoFlare done ---
+363 in_progress   # definition of done — proxy depth
+364 review        # GoGate — proxy.ForRoute per-route cloned Transport + Policy.UpstreamTimeout (TestForRoutePerRouteTransport)
+365 review        # GoFlare — ModifyResponse/ErrorHandler 5xx capture (pre-existing; TestEdgeCapturesUpstream5xx/Down)
+
+# --- P4: crypto/tls — GoGate done (internal/tlsconf, mTLS both directions); GoFlare edge deferred ---
+353 in_progress   # definition of done — crypto/tls (GoFlare edge leg left)
+354 review        # GoGate — internal/tlsconf: hardened listener + inbound mTLS + upstream CA pin/outbound mTLS (TestMutualTLSEndToEnd)
+355 todo          # GoFlare — edge TLS termination + client-cert capture (needs tlsconf duplicated into the goflare module)
+
+# --- U21: codegen — n/a in current form (enums are type-X-string; buf waits on U20) ---
+334 in_progress   # definition of done — codegen
+335 todo          # GoSnow — buf generate (waits on U20 protos)
+336 todo          # GoFlare — enum stringers n/a (Level/Status are `type X string`); schema-decoder codegen is a larger effort
+
+# --- U3: execution tracer — endpoint shipped in S0/U2 (debug pkg exposes /debug/pprof/trace); capture-under-load is analysis ---
+291 in_progress   # definition of done — execution tracer (trace endpoint live; capture + findings need a load run)
+292 todo          # GoStream — trace a broadcast storm (needs a load generator)
+293 todo          # GoRender — trace worker-pool contention (needs a real queue drain)
+
+# --- P1: generics — GoGate done (internal/ttlcache generic Cache[K,V]) ---
+346 in_progress   # definition of done — generics (GoSnow/GoStream legs open)
+347 todo          # GoSnow — typed column/row (deferred: lands with U10 real rows)
+348 review        # GoGate — internal/ttlcache generic Cache[K comparable,V any]; cache.Cache uses it (ttlcache_test.go)
+349 todo          # GoStream — generic topic registry (hub map is fine; low ROI, deferred)
+
+# --- U19: structured pipelines — GoFlare + GoRender done ---
+326 in_progress   # definition of done — structured pipelines (GoSnow leg needs U10)
+327 review        # GoFlare — pipeline contract documented + TestPipelineNoGoroutineLeak (synctest)
+328 review        # GoRender — partial .mp4 removed on mid-encode failure (TestPoolCleansPartialArtifactOnFailure)
+329 todo          # GoSnow — query execution pipeline (blocked: needs U10 scan goroutines)

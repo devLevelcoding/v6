@@ -1,0 +1,27 @@
+# CoverGo blocked-task comments. The tasks.status column is a MySQL enum
+# (todo|in_progress|review|done) — no "blocked" value without a schema migration,
+# so these stay `todo` and carry a comment instead.
+#   go run . comments-db sprints/covergo-blockers.txt
+307 BLOCKED — waiting on U10. Row-iteration streaming only pays off once DuckDB returns real Arrow batches; the skeleton engine's [][]any result has nothing to stream.
+308 DEFERRED — apply at the event-history boundary (group.Store.Events for a large issue); List() sorts the whole set so an iterator saves nothing there.
+312 BLOCKED — waiting on U10. Zero-copy views need the mmap'd Parquet/Arrow buffers that land with the DuckDB engine.
+313 BLOCKED — CI-only. The Windows dev box has no C toolchain (proven: `go test -race` fails with "requires cgo"). go-duckdb needs CGO_ENABLED=1 + gcc/clang. The S0 GitHub Actions workflow (ubuntu) builds it.
+314 BLOCKED — CI-only, same as 313. Code can be written behind a build tag but only the linux CI can compile/verify it.
+315 BLOCKED — depends on 314 (the cgo build must exist before its matrix/image can be defined).
+316 BLOCKED — depends on 314 (need the DuckDB engine before loading a real dataset through it).
+319 BLOCKED — waiting on U10. There are no micro-partitions to scan in parallel until the DuckDB engine + Postgres catalog exist.
+329 BLOCKED — waiting on U10. The cancellable query pipeline is scan goroutines that don't exist yet in the skeleton engine.
+330 BLOCKED — needs protoc/buf codegen; better run in CI than added to the Windows box.
+331 BLOCKED — needs U10 (something for the warehouse to execute) + protoc.
+332 BLOCKED — needs protoc/buf to generate the Publisher service stubs.
+333 BLOCKED — needs the U20 protos to exist before h2c passthrough can be tested end to end.
+335 BLOCKED — `buf generate` waits on the U20 .proto files.
+336 NOT APPLICABLE — GoFlare's Level/Status are `type X string` (already self-describing); stringer is for int enums. The schema-decoder codegen is a separate, larger effort.
+344 BLOCKED — needs a ws.Conn test seam. writeLoop's ping ticker lives in package server but ws.newConn is unexported, so an internal synctest test can't construct a *ws.Conn. Small refactor: export a test constructor or move the ping loop.
+347 BLOCKED — waiting on U10. Typed Column[T] only matters once real rows flow; the skeleton returns [][]any.
+349 DEFERRED — low ROI. The hub's map[string]*Client is fine; a generic topic registry would be churn without a measured win.
+355 BLOCKED — needs internal/tlsconf duplicated into the goflare module (separate go.mod). The GoGate implementation (P4/354) is the template.
+361 LOW FIT — error ingest must parse the whole body to build the event, so streaming it past a TeeReader saves nothing. Revisit if a pass-through/forward mode is added.
+362 DEFERRED — lands with the object-store upload path (not built yet); io.MultiWriter(hash, uploadPart) is the plan.
+292 ANALYSIS — the /debug/pprof/trace endpoint already ships (S0/U2). Capturing a broadcast-storm trace needs a load generator against real ws connections.
+293 ANALYSIS — same: the endpoint is live; a worker-pool contention trace needs a real queue drain under load.

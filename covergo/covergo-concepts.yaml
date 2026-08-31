@@ -1,0 +1,718 @@
+# CoverGo — Go concept coverage for the 5 hot-path V5 services
+# (GoGate · GoSnow · GoStream · GoFlare · GoRender)
+#
+# Source of truth: F:\V5\CoverGo.md  (concept -> project mapping, U#/P# ids).
+# One epic, one sprint per concept, one task per target service + a lead
+# "definition of done" task. Sprint 0 is the cross-cutting CI/measurement
+# foundation and holds the living progress tracker task.
+#
+# Push:  laracrmctl sync sprints/covergo-concepts.yaml     (GraphQL, needs LARACRM_TOKEN)
+#   or:  laracrmctl sync-db sprints/covergo-concepts.yaml  (direct MySQL, needs LARACRM_DB_*)
+# Re-runnable: add sprints/tasks and run again — only new ones are created
+# (tracked in covergo-concepts.state.json; don't hand-edit that).
+#
+# If createProject is rejected by the API, set project.id below to an existing
+# LaraCRM project id and re-run.
+
+project:
+  name: "V5 — Go Concept Coverage"
+  description: >-
+    Close the Go-concept gaps identified in F:\V5\CoverGo.md across the five
+    services featureGo.md flags as hot-path: GoGate, GoSnow, GoStream, GoFlare,
+    GoRender. Bias: the measurement + low-level half of Go that the estate never
+    exercises (benchmarks, pprof, -race, cgo, gRPC, fuzzing, x/sync).
+  status: "planning"
+
+epic:
+  name: "Go Concept Coverage — 5 V5 services"
+  short_description: "Adopt every partial/uncovered Go concept from CoverGo.md in GoGate/GoSnow/GoStream/GoFlare/GoRender."
+  description: >-
+    Each sprint = one concept (U# uncovered / P# partial, ids from CoverGo.md).
+    Each sprint's tasks = the specific services that should adopt it, plus a
+    lead task fixing the acceptance bar. Sprint 0 lands the CI + benchmarking +
+    fuzzing + static-build foundation the rest depends on, and carries the
+    progress tracker. Estimates are rough one-engineer dev-hours.
+  priority: high
+  start_date: "2026-08-31"
+  end_date: "2027-06-30"
+
+sprints:
+  # ============================================================ Sprint 0
+  - name: "S0 — CI + measurement foundation (U5/U22/U23)"
+    description: "No CI exists today. Land race detection, a fuzz+bench harness, and static/distroless builds for all 5, then track everything else here."
+    start_date: "2026-09-01"
+    end_date: "2026-09-14"
+    tasks:
+      - title: "S0: CoverGo progress tracker — living checklist"
+        short_description: "The single task to watch for overall progress. Update via `laracrmctl comment <this-id> @F:\\V5\\CoverGo.md`."
+        description: >-
+          Rollup of every concept sprint in this epic. Workflow: each task moves
+          todo -> in_progress -> review -> done; when a concept lands in a
+          service with a test, tick its box in F:\V5\CoverGo.md and post the
+          diff as a comment here. Re-run `laracrmctl sync
+          sprints/covergo-concepts.yaml` after adding sprints/tasks.
+          Order from CoverGo.md: (1) this sprint — CI + race + fuzz + bench
+          harness, (2) U1/U2 in GoGate & GoStream to prove featureGo.md's
+          15x/20x, (3) U10 cgo+DuckDB in GoSnow, (4) U16/U17/U18 in GoRender &
+          GoGate, (5) U20 gRPC in GoSnow then GoStream.
+        priority: high
+        estimated_hours: 2
+      - title: "S0: definition of done — CI foundation"
+        short_description: "Acceptance bar for this sprint."
+        description: >-
+          Done when: a CI workflow runs `go vet ./...`, `go test -race ./...`
+          and `go test -run=^$ -bench=. -benchtime=1x ./...` (smoke) for all 5
+          repos; each repo has a `testdata/fuzz` seed dir and at least one
+          `func Fuzz*`; each repo produces a `CGO_ENABLED=0` static binary
+          (GoSnow documents its cgo exception) on a distroless/scratch base;
+          `benchstat` is wired into a `make bench` target.
+        priority: high
+        estimated_hours: 3
+      - title: "S0: GoGate — race CI + static/distroless build + bench+fuzz harness"
+        short_description: "U5/U22/U23 for GoGate."
+        description: "GitHub Actions: vet + `go test -race ./...`. `CGO_ENABLED=0` build, distroless base image. Seed `Fuzz` for the JWT parser and route matcher; `make bench` + benchstat baseline committed."
+        priority: high
+        estimated_hours: 4
+      - title: "S0: GoStream — race CI + static/distroless build + bench+fuzz harness"
+        short_description: "U5/U22/U23 for GoStream."
+        description: "Race CI (the hub + wsconn have real shared state). Static build + distroless. `Fuzz` for the hand-rolled RFC 6455 frame parser (internal/ws). Bench harness for hub broadcast + frame encode."
+        priority: high
+        estimated_hours: 4
+      - title: "S0: GoRender — race CI + static build + bench harness"
+        short_description: "U5/U22 for GoRender."
+        description: "Race CI on the worker pool + queue. Static binary (ffmpeg stays a sidecar, so `CGO_ENABLED=0` is fine) + distroless+ffmpeg image. Bench harness for plan compile + queue throughput."
+        priority: high
+        estimated_hours: 4
+      - title: "S0: GoFlare — race CI + static/distroless build + bench+fuzz harness"
+        short_description: "U5/U22/U23 for GoFlare."
+        description: "Race CI (ingest pipeline, group store). Static build + distroless. `Fuzz` for the event envelope decoder (internal/event). Bench harness for ingest pipeline + fingerprint."
+        priority: high
+        estimated_hours: 4
+      - title: "S0: GoSnow — race CI + build matrix (cgo exception) + bench+fuzz harness"
+        short_description: "U5/U22/U23 for GoSnow."
+        description: "Race CI. Document the CGO_ENABLED=1 build once DuckDB lands (U10) — distroless-nonroot base, not scratch. `Fuzz` for the toy SQL parser (internal/query). Bench harness for catalog + query engine."
+        priority: high
+        estimated_hours: 4
+
+  # ============================================================ U1
+  - name: "U1 — Benchmarks & benchstat"
+    description: "featureGo.md's entire thesis is unmeasured multipliers. Give every hot path a *_bench_test.go and a committed benchstat baseline."
+    start_date: "2026-09-15"
+    end_date: "2026-09-28"
+    tasks:
+      - title: "U1: definition of done — benchmarks"
+        short_description: "Acceptance bar."
+        description: "Each of the 5 has `Benchmark*` covering its headline operation, run with `-benchmem`, a committed `bench/baseline.txt`, and a CONTRIBUTING note on `benchstat old new` before/after a perf change."
+        priority: high
+        estimated_hours: 2
+      - title: "U1: GoGate — benchmark the proxy path (target 6k -> 90k rps)"
+        short_description: "BenchmarkForward, BenchmarkJWTVerify, BenchmarkRateLimit, BenchmarkCacheHit."
+        description: "In-process `httptest` upstream; measure allocs/op and ns/op for the full middleware chain. This is the number featureGo.md claims 15x on."
+        priority: high
+        estimated_hours: 5
+      - title: "U1: GoStream — benchmark hub broadcast (target 15k -> 300k conns)"
+        short_description: "BenchmarkPublishFanout at N subscribers, BenchmarkFrameEncode/Decode."
+        description: "Measure per-subscriber cost of `hub.Publish`, RAM/connection, and slow-consumer drop overhead. The 20x claim."
+        priority: high
+        estimated_hours: 5
+      - title: "U1: GoRender — benchmark plan compile + queue (target 65s -> 9s/job)"
+        short_description: "BenchmarkPlanCompile (spec -> filtergraph), BenchmarkQueueThroughput."
+        description: "Bench the Go orchestration only (not ffmpeg): spec decode, plan build, dedup hash, queue enqueue/dequeue under contention."
+        priority: medium
+        estimated_hours: 4
+      - title: "U1: GoFlare — benchmark the ingest pipeline"
+        short_description: "BenchmarkEnvelopeDecode, BenchmarkFingerprint, BenchmarkPipelineIngest."
+        description: "End-to-end decode -> fingerprint -> group -> persist (mem store) throughput, allocs/op."
+        priority: medium
+        estimated_hours: 4
+      - title: "U1: GoSnow — benchmark catalog + query engine"
+        short_description: "BenchmarkCatalogLookup, BenchmarkQueryPlan/Exec on the in-mem impl."
+        description: "Baseline before U10 lands DuckDB, so the engine swap is measured."
+        priority: medium
+        estimated_hours: 4
+
+  # ============================================================ U2
+  - name: "U2 — Profiling: pprof / heap / mutex / block"
+    description: "Mount net/http/pprof behind the existing admin listener; document how to read CPU/heap/mutex/block profiles for each service."
+    start_date: "2026-09-29"
+    end_date: "2026-10-12"
+    tasks:
+      - title: "U2: definition of done — profiling"
+        short_description: "Acceptance bar."
+        description: "Each service exposes pprof on an admin-only listener (guarded, never the public port), `runtime.SetMutexProfileFraction` + `SetBlockProfileRate` are configurable, and each README has a 'profiling this service' section with the exact `go tool pprof` commands."
+        priority: high
+        estimated_hours: 2
+      - title: "U2: GoGate — pprof on the admin plane + allocation profile"
+        short_description: "internal/server/admin.go already exists — mount pprof there."
+        description: "Add `import _ \"net/http/pprof\"` on the admin mux; capture a heap profile under load and cut the top allocators in the proxy path."
+        priority: high
+        estimated_hours: 3
+      - title: "U2: GoStream — mutex + block profiles on the hub"
+        short_description: "goroutine-per-conn + shared hub map = contention risk."
+        description: "Enable mutex/block profiling; find lock contention in `hub.Publish` / subscribe under a broadcast storm; feed results into U7 (sync.Pool) and P1 (typed hub)."
+        priority: high
+        estimated_hours: 3
+      - title: "U2: GoRender — CPU + goroutine profile of the worker pool"
+        short_description: "Pool sized to NumCPU running ffmpeg subprocesses."
+        description: "Profile the orchestration goroutines (progress parsing, dedup, upload) to confirm they're not the bottleneck vs ffmpeg."
+        priority: medium
+        estimated_hours: 3
+      - title: "U2: GoFlare — heap profile of the ingest pipeline"
+        short_description: "Envelope decode + grouping allocate per event."
+        description: "Heap profile at ingest rate; identify buffers to pool (U7)."
+        priority: medium
+        estimated_hours: 2
+      - title: "U2: GoSnow — pprof endpoint + scan profile"
+        short_description: "Wire pprof before the DuckDB engine lands."
+        description: "Admin pprof listener; baseline CPU profile of the in-mem query path."
+        priority: low
+        estimated_hours: 2
+
+  # ============================================================ U3
+  - name: "U3 — Execution tracer (runtime/trace)"
+    description: "Diagnostic: capture a runtime/trace window to see scheduler behaviour under fan-out / pool contention."
+    start_date: "2026-10-13"
+    end_date: "2026-10-26"
+    tasks:
+      - title: "U3: definition of done — execution tracer"
+        short_description: "Acceptance bar."
+        description: "An admin endpoint (or flag) that writes a `trace.out` for N seconds; a README note on reading it with `go tool trace`; used at least once on GoStream and GoRender with findings written up."
+        priority: low
+        estimated_hours: 2
+      - title: "U3: GoStream — trace a broadcast storm"
+        short_description: "See goroutine scheduling + network poller behaviour at fan-out."
+        description: "Capture a trace during a publish to N subscribers; look for scheduler latency, GC pauses, syscall blocking."
+        priority: low
+        estimated_hours: 3
+      - title: "U3: GoRender — trace worker-pool contention"
+        short_description: "Confirm workers aren't serialised on a shared lock or channel."
+        description: "Trace a full queue drain with pool size = NumCPU; check for goroutines parked on the queue mutex."
+        priority: low
+        estimated_hours: 3
+
+  # ============================================================ U4
+  - name: "U4 — Escape analysis & inlining"
+    description: "Build-time analysis of the hottest paths; record findings in each TestPlan.md and act where it's cheap."
+    start_date: "2026-10-27"
+    end_date: "2026-11-09"
+    tasks:
+      - title: "U4: definition of done — escape analysis"
+        short_description: "Acceptance bar."
+        description: "`go build -gcflags='-m=2'` output for the hot package of GoStream and GoGate is captured, unexpected heap escapes on the hot path are fixed or explained, and the analysis is committed to TestPlan.md."
+        priority: medium
+        estimated_hours: 2
+      - title: "U4: GoStream — escape analysis of frame encode/decode + hub publish"
+        short_description: "Per-message path must not allocate needlessly."
+        description: "Inspect `-m` output for internal/ws and internal/hub; kill escapes from interface boxing / slice growth on the send path."
+        priority: medium
+        estimated_hours: 4
+      - title: "U4: GoGate — escape analysis of the proxy + middleware chain"
+        short_description: "Per-request path."
+        description: "Check context value plumbing, header copies, and buffer handling in internal/proxy and internal/server/forward.go for avoidable escapes."
+        priority: medium
+        estimated_hours: 3
+
+  # ============================================================ U6
+  - name: "U6 — Runtime tuning (GOMAXPROCS / GOGC / GOMEMLIMIT)"
+    description: "Right-size the runtime for containers: automaxprocs, a GOMEMLIMIT soft ceiling for scale-to-zero, GOGC where throughput trades against RSS."
+    start_date: "2026-11-10"
+    end_date: "2026-11-23"
+    tasks:
+      - title: "U6: definition of done — runtime tuning"
+        short_description: "Acceptance bar."
+        description: "Each service imports automaxprocs (or sets GOMAXPROCS from the cgroup quota), honours GOMEMLIMIT, and its README documents the recommended GOGC/GOMEMLIMIT for a small container. GoPlatform module 3 gets a day covering this."
+        priority: medium
+        estimated_hours: 2
+      - title: "U6: GoRender — GOMAXPROCS from container quota"
+        short_description: "Pool is sized to NumCPU — must be the *allowed* CPU, not the host's."
+        description: "Add automaxprocs; verify worker count matches the cgroup quota in a limited container."
+        priority: medium
+        estimated_hours: 2
+      - title: "U6: GoGate — GOMEMLIMIT soft ceiling + GOGC tuning under load"
+        short_description: "Flat RSS on a scale-to-zero platform."
+        description: "Set GOMEMLIMIT; sweep GOGC (50/100/200) against the U1 benchmark to pick the throughput/RSS point."
+        priority: medium
+        estimated_hours: 3
+      - title: "U6: GoStream — GOMEMLIMIT with 300k idle connections"
+        short_description: "Connection buffers dominate the heap."
+        description: "Validate the runtime backs off GC pressure correctly near GOMEMLIMIT at high connection counts."
+        priority: medium
+        estimated_hours: 3
+      - title: "U6: GoSnow — GOMEMLIMIT for large scans"
+        short_description: "A big query must degrade, not OOM."
+        description: "Set GOMEMLIMIT; confirm scan spills / errors gracefully rather than getting OOM-killed."
+        priority: low
+        estimated_hours: 2
+
+  # ============================================================ U7
+  - name: "U7 — sync.Pool (allocation reuse)"
+    description: "Pool the per-message / per-request / per-doc buffers the hot paths allocate. Gate every change on a U1 benchmark showing fewer allocs/op."
+    start_date: "2026-11-24"
+    end_date: "2026-12-07"
+    tasks:
+      - title: "U7: definition of done — sync.Pool"
+        short_description: "Acceptance bar."
+        description: "Each adopted pool has a benchmark proving lower allocs/op with no correctness regression under -race, and a comment explaining the lifetime (no retained references after Put)."
+        priority: medium
+        estimated_hours: 1
+      - title: "U7: GoStream — pool frame buffers + per-conn send buffers"
+        short_description: "Biggest per-message allocator."
+        description: "Pool the read/write frame scratch buffers in internal/ws and the per-connection send buffer; benchmark against U1's BenchmarkPublishFanout."
+        priority: medium
+        estimated_hours: 4
+      - title: "U7: GoGate — pool proxy copy buffers + response-cache buffers"
+        short_description: "io.Copy scratch + cache entry assembly."
+        description: "Replace per-request `make([]byte, ...)` in the proxy/cache paths with a pool; verify with U1's proxy benchmark."
+        priority: medium
+        estimated_hours: 3
+      - title: "U7: GoFlare — pool envelope decode buffers"
+        short_description: "Per-event decode scratch."
+        description: "Pool the decode buffers in internal/event; benchmark against U1's BenchmarkPipelineIngest."
+        priority: low
+        estimated_hours: 2
+
+  # ============================================================ U8
+  - name: "U8 — Iterators (iter.Seq / range-over-func)"
+    description: "go 1.26 everywhere but zero iterator use. Convert the collection-walking APIs to iter.Seq / iter.Seq2 where it removes slice materialisation."
+    start_date: "2026-12-08"
+    end_date: "2026-12-21"
+    tasks:
+      - title: "U8: definition of done — iterators"
+        short_description: "Acceptance bar."
+        description: "Each adopted API returns `iter.Seq[...]`, callers use `for x := range ...`, and at least one call site that previously built a full slice now streams. Tests cover early `break`."
+        priority: medium
+        estimated_hours: 1
+      - title: "U8: GoSnow — row iteration from storage/catalog"
+        short_description: "Stream rows instead of returning [][]value."
+        description: "`storage.Scan` / query results as `iter.Seq[Row]`; the query engine consumes them without materialising the whole result."
+        priority: medium
+        estimated_hours: 5
+      - title: "U8: GoFlare — event stream iteration"
+        short_description: "Ingest + group iteration as iter.Seq."
+        description: "Pipeline stages consume `iter.Seq[Event]`; snapshot/history reads stream."
+        priority: medium
+        estimated_hours: 3
+      - title: "U8: GoGate — route store iteration"
+        short_description: "internal/route store lookups + admin listing."
+        description: "Expose route enumeration as `iter.Seq[Route]` for the admin endpoint."
+        priority: low
+        estimated_hours: 2
+
+  # ============================================================ U9
+  - name: "U9 — unsafe / unsafe.Pointer"
+    description: "Only if a U1 benchmark justifies it: word-at-a-time WebSocket unmasking, zero-copy views over columnar buffers."
+    start_date: "2026-12-22"
+    end_date: "2027-01-04"
+    tasks:
+      - title: "U9: definition of done — unsafe"
+        short_description: "Acceptance bar."
+        description: "Every `unsafe` use has a benchmark showing a real win, a safe fallback build tag, a `//go:nocheckptr`-free implementation, and passes `go test -race` + `go vet`. If no benchmark win, don't merge — document the attempt."
+        priority: low
+        estimated_hours: 1
+      - title: "U9: GoStream — word-at-a-time frame unmasking"
+        short_description: "XOR 8 bytes at a time via unsafe instead of byte loop."
+        description: "Benchmark against the safe byte-loop in BenchmarkFrameDecode; keep the safe path behind a build tag."
+        priority: low
+        estimated_hours: 4
+      - title: "U9: GoSnow — zero-copy views over Parquet/Arrow buffers"
+        short_description: "Avoid copying column data out of the mmap'd page."
+        description: "Once DuckDB/Arrow batches land (U10), expose typed slices over the backing bytes without a copy; bounds-check carefully."
+        priority: low
+        estimated_hours: 5
+
+  # ============================================================ U10
+  - name: "U10 — cgo + embed DuckDB (GoSnow)"
+    description: "The single most roadmap-blocking gap: GoSnow future.md Phase 2 default is 'embed DuckDB (CGo)' but go.mod has no DuckDB dep. Forces the cgo build story."
+    start_date: "2027-01-05"
+    end_date: "2027-01-25"
+    tasks:
+      - title: "U10: definition of done — cgo + DuckDB"
+        short_description: "Acceptance bar."
+        description: "`marcboeker/go-duckdb` wired behind the existing `query.Engine` interface; a real SELECT over a Parquet file in the S3Store returns correct rows; the cgo build is documented (CGO_ENABLED=1, cross-compile constraints, distroless-nonroot base, binary size delta); walking-skeleton tests stay green."
+        priority: critical
+        estimated_hours: 12
+      - title: "U10: GoSnow — add go-duckdb behind query.Engine"
+        short_description: "Swap the toy engine for embedded DuckDB via the interface."
+        description: "New `internal/query/duckdb.go` implementing Engine; keep the in-mem impl for tests. Prune partitions by catalog stats, push filters down, stream Arrow batches back."
+        priority: critical
+        estimated_hours: 16
+      - title: "U10: GoSnow — cgo build matrix + image"
+        short_description: "CGO_ENABLED=1, musl/glibc, distroless-nonroot."
+        description: "Document and CI the cgo build: which GOOS/GOARCH are buildable here, static-vs-dynamic libc, the base image change from U22, and the binary-size / cold-start delta."
+        priority: high
+        estimated_hours: 6
+      - title: "U10: GoSnow — load the first real dataset through DuckDB"
+        short_description: "leadMarketing/crm_pipeline leads as the first table."
+        description: "Load `leads_scored` as Parquet micro-partitions; re-run a pandas/BigQuery aggregate as GoSnow SQL and cross-check the numbers."
+        priority: medium
+        estimated_hours: 6
+
+  # ============================================================ U16
+  - name: "U16 — golang.org/x/sync/errgroup"
+    description: "Replace ad-hoc WaitGroup + error channel with errgroup for fan-out that needs first-error cancellation."
+    start_date: "2027-01-26"
+    end_date: "2027-02-08"
+    tasks:
+      - title: "U16: definition of done — errgroup"
+        short_description: "Acceptance bar."
+        description: "Every multi-goroutine fan-out with an error path uses `errgroup.WithContext`; `SetLimit` where concurrency must be bounded; a cancelled parent context tears the whole group down; tests cover the first-error case."
+        priority: high
+        estimated_hours: 1
+      - title: "U16: GoRender — errgroup for the worker pool fan-out"
+        short_description: "First ffmpeg failure cancels the sibling jobs in that batch."
+        description: "internal/worker + internal/queue: run a batch under errgroup with SetLimit(NumCPU); a failed render cancels the rest and surfaces the real error."
+        priority: high
+        estimated_hours: 4
+      - title: "U16: GoSnow — errgroup for parallel partition scan"
+        short_description: "Scan micro-partitions concurrently, fail fast."
+        description: "The query engine scans partitions under errgroup; a bad partition or a cancelled query stops all scanners."
+        priority: high
+        estimated_hours: 4
+      - title: "U16: GoFlare — errgroup for the ingest pipeline stages"
+        short_description: "Decode / fingerprint / persist as a cancellable group."
+        description: "Replace the pipeline's manual goroutine + channel plumbing with errgroup so a persist error cancels upstream."
+        priority: medium
+        estimated_hours: 4
+
+  # ============================================================ U17
+  - name: "U17 — golang.org/x/sync/singleflight (GoGate)"
+    description: "GoGate future.md literally says 'singleflight coalescing'. The current cache dedup is hand-rolled — swap it for the real package."
+    start_date: "2027-02-09"
+    end_date: "2027-02-22"
+    tasks:
+      - title: "U17: definition of done — singleflight"
+        short_description: "Acceptance bar."
+        description: "internal/cache uses `singleflight.Group` for cache-miss coalescing; a benchmark shows N concurrent misses for the same key produce 1 upstream call; `Forget` on error paths; no goroutine leak under -race."
+        priority: medium
+        estimated_hours: 2
+      - title: "U17: GoGate — replace hand-rolled coalescing with singleflight.Group"
+        short_description: "internal/cache + internal/server/forward.go."
+        description: "Coalesce concurrent misses for the same route+vary key into one upstream fetch; benchmark against a burst of identical requests; keep the TTL layer."
+        priority: medium
+        estimated_hours: 5
+
+  # ============================================================ U18
+  - name: "U18 — golang.org/x/sync/semaphore"
+    description: "Weighted bounds where a plain buffered channel can't express it: per-upstream connection caps, ffmpeg concurrency by cost."
+    start_date: "2027-02-23"
+    end_date: "2027-03-08"
+    tasks:
+      - title: "U18: definition of done — semaphore"
+        short_description: "Acceptance bar."
+        description: "Each bound uses `semaphore.Weighted` with context-aware `Acquire`; the weight reflects real cost (not always 1); a slow/cancelled caller releases correctly; covered by a test."
+        priority: medium
+        estimated_hours: 1
+      - title: "U18: GoRender — bound ffmpeg concurrency by job cost"
+        short_description: "A 4K job weighs more than a 480p slide."
+        description: "Weighted semaphore sized to a CPU budget; heavy filtergraphs acquire more weight so the box isn't oversubscribed."
+        priority: medium
+        estimated_hours: 4
+      - title: "U18: GoGate — per-upstream in-flight connection cap"
+        short_description: "Protect a weak backend from the gateway's concurrency."
+        description: "Per-route `semaphore.Weighted`; requests over the cap queue with a context deadline, then 503."
+        priority: medium
+        estimated_hours: 3
+
+  # ============================================================ U19
+  - name: "U19 — Bounded structured concurrency / cancellation-aware pipelines"
+    description: "Go beyond the basic worker pool: staged pipelines where every stage honours context, backpressure is explicit, and shutdown is clean."
+    start_date: "2027-03-09"
+    end_date: "2027-03-22"
+    tasks:
+      - title: "U19: definition of done — structured pipelines"
+        short_description: "Acceptance bar."
+        description: "Each adopted pipeline: bounded channels between stages, every stage selects on ctx.Done(), a documented shutdown order, no goroutine leak on cancel (verified with a leak check in tests)."
+        priority: medium
+        estimated_hours: 2
+      - title: "U19: GoFlare — staged ingest pipeline with backpressure"
+        short_description: "decode -> fingerprint -> group -> persist, bounded."
+        description: "Explicit bounded stages; a slow persist backs pressure up to the HTTP handler which sheds load rather than buffering unboundedly."
+        priority: medium
+        estimated_hours: 6
+      - title: "U19: GoRender — job lifecycle as a cancellable pipeline"
+        short_description: "accept -> plan -> render -> upload, each ctx-aware."
+        description: "A cancelled job (client gone, deadline) stops ffmpeg and skips upload; partial artifacts cleaned."
+        priority: medium
+        estimated_hours: 4
+      - title: "U19: GoSnow — query execution as a cancellable pipeline"
+        short_description: "plan -> scan -> filter -> aggregate -> stream."
+        description: "A cancelled or errored query tears down all scan goroutines and closes result streams deterministically."
+        priority: medium
+        estimated_hours: 5
+
+  # ============================================================ U20
+  - name: "U20 — gRPC / protobuf / streaming RPC"
+    description: "Named in GoSnow (coordinator<->worker, 'first-class gRPC') and GoStream ('publish over HTTP/gRPC') roadmaps. Add proto contracts + generated servers."
+    start_date: "2027-03-23"
+    end_date: "2027-04-12"
+    tasks:
+      - title: "U20: definition of done — gRPC"
+        short_description: "Acceptance bar."
+        description: "`.proto` files under `proto/`, `buf` lint + breaking-change check in CI, generated code via `go:generate` (U21), at least one unary and one streaming method implemented and tested with `bufconn`, TLS/mTLS on the wire (P4)."
+        priority: high
+        estimated_hours: 3
+      - title: "U20: GoSnow — coordinator<->warehouse gRPC contract"
+        short_description: "Submit query, stream Arrow result batches back."
+        description: "proto: `Warehouse` service with `Execute` (server-streaming batches), `Suspend`, `Resume`, `Status`. Implement over the U19 pipeline."
+        priority: high
+        estimated_hours: 10
+      - title: "U20: GoStream — gRPC publish ingress"
+        short_description: "Alternative to the HTTP publish path for internal producers."
+        description: "proto: `Publisher` service with a client-streaming `Publish`; shares the hub with the HTTP ingress. Bench vs HTTP ingress."
+        priority: medium
+        estimated_hours: 6
+      - title: "U20: GoGate — gRPC-aware proxying (h2c passthrough)"
+        short_description: "So the gateway can front GoSnow/GoStream gRPC."
+        description: "Detect gRPC (content-type application/grpc), proxy over HTTP/2 without buffering the stream; JWT still enforced."
+        priority: medium
+        estimated_hours: 6
+
+  # ============================================================ U21
+  - name: "U21 — go:generate & code generation"
+    description: "Bring codegen into the build: protoc/buf stubs, stringer for enums, sqlc where raw SQL grows."
+    start_date: "2027-04-13"
+    end_date: "2027-04-26"
+    tasks:
+      - title: "U21: definition of done — codegen"
+        short_description: "Acceptance bar."
+        description: "`go generate ./...` is reproducible and CI-checked (generated files match), each generator is pinned to a version, and a CONTRIBUTING note explains when to re-run."
+        priority: medium
+        estimated_hours: 2
+      - title: "U21: GoSnow — buf generate for the U20 protos + stringer for enums"
+        short_description: "Wire buf + stringer under go:generate."
+        description: "`//go:generate buf generate`; stringer for query/warehouse state enums; CI diff-check."
+        priority: medium
+        estimated_hours: 4
+      - title: "U21: GoFlare — generate the event-schema decoder + level/status stringers"
+        short_description: "Replace hand-written boilerplate in internal/event."
+        description: "Codegen the field decoders from a schema definition; stringer for issue level/status."
+        priority: medium
+        estimated_hours: 4
+
+  # ============================================================ U23
+  - name: "U23 — Fuzzing (testing.F)"
+    description: "Every hand-rolled parser is a fuzz target. Seed corpora and run fuzzing in CI (short) + nightly (long)."
+    start_date: "2027-04-27"
+    end_date: "2027-05-10"
+    tasks:
+      - title: "U23: definition of done — fuzzing"
+        short_description: "Acceptance bar."
+        description: "Each parser has `func Fuzz*` with a seed corpus in `testdata/fuzz`, CI runs `-fuzz` for 30s per target, a nightly job runs longer, and any crasher is committed as a regression seed."
+        priority: high
+        estimated_hours: 2
+      - title: "U23: GoStream — fuzz the RFC 6455 frame parser"
+        short_description: "internal/ws frame + upgrade — the highest-value target."
+        description: "Fuzz `readFrame` / header parse against malformed length, mask, continuation and control-frame inputs; assert no panic, bounded allocation."
+        priority: high
+        estimated_hours: 4
+      - title: "U23: GoGate — fuzz the JWT parser + route matcher"
+        short_description: "internal/auth/jwt.go, internal/route."
+        description: "Fuzz base64 segments, alg confusion, oversized claims; fuzz route-pattern matching against adversarial paths."
+        priority: high
+        estimated_hours: 4
+      - title: "U23: GoFlare — fuzz the event envelope decoder"
+        short_description: "internal/event/decode*.go."
+        description: "Fuzz the Sentry-envelope decode (multi-part, bad lengths, truncated JSON); assert graceful error, no OOM."
+        priority: high
+        estimated_hours: 3
+      - title: "U23: GoSnow — fuzz the SQL parser"
+        short_description: "internal/query engine parse path."
+        description: "Fuzz the toy SQL surface; assert parse errors instead of panics; grows with the DuckDB pushdown work."
+        priority: medium
+        estimated_hours: 3
+
+  # ============================================================ U24
+  - name: "U24 — testing/synctest (deterministic time)"
+    description: "Kill flaky time-based tests: wrap scheduler / rate-limiter / heartbeat / timeout tests in synctest bubbles."
+    start_date: "2027-05-11"
+    end_date: "2027-05-24"
+    tasks:
+      - title: "U24: definition of done — synctest"
+        short_description: "Acceptance bar."
+        description: "Every test that previously slept or raced on a timer uses `synctest.Test` / `synctest.Wait`; the suite has no real `time.Sleep` in time-dependent tests; CI is faster and non-flaky."
+        priority: medium
+        estimated_hours: 1
+      - title: "U24: GoGate — deterministic rate-limiter + cache-TTL tests"
+        short_description: "Token-bucket refill and TTL expiry without wall-clock sleeps."
+        description: "Wrap internal/ratelimit and internal/cache expiry tests in synctest; advance virtual time."
+        priority: medium
+        estimated_hours: 3
+      - title: "U24: GoStream — deterministic heartbeat / ping-timeout tests"
+        short_description: "Slow-consumer eviction and ping deadlines."
+        description: "synctest the hub's ping/pong deadline and slow-consumer drop timing."
+        priority: medium
+        estimated_hours: 3
+      - title: "U24: GoRender — deterministic queue-timeout / retry-backoff tests"
+        short_description: "Job deadline and retry schedule."
+        description: "synctest the queue's context deadline handling and exponential backoff."
+        priority: low
+        estimated_hours: 2
+
+  # ============================================================ P1
+  - name: "P1 — Generics depth (constraints, type sets, containers)"
+    description: "Only 3 trivial generic helpers exist today. Introduce real generic containers / constraints where it removes duplicated per-type code, and adopt slices/maps/cmp."
+    start_date: "2027-05-25"
+    end_date: "2027-06-07"
+    tasks:
+      - title: "P1: definition of done — generics"
+        short_description: "Acceptance bar."
+        description: "At least one generic container or algorithm per adopted service replacing duplicated code, `slices`/`maps`/`cmp` used instead of hand-rolled loops, constraints documented, no `any` where a constraint fits."
+        priority: medium
+        estimated_hours: 1
+      - title: "P1: GoSnow — typed column / row values via generics"
+        short_description: "Replace []any column handling with a generic Column[T]."
+        description: "Generic typed columns + a constraint for the supported scalar types; the engine stops type-switching on every cell."
+        priority: medium
+        estimated_hours: 6
+      - title: "P1: GoGate — generic TTL cache + typed route store"
+        short_description: "One `Cache[K comparable, V any]` instead of per-use maps+mutex."
+        description: "Extract the repeated 'map + RWMutex + expiry' pattern into a generic type used by cache, ratelimit and route stores."
+        priority: medium
+        estimated_hours: 4
+      - title: "P1: GoStream — generic topic registry / subscriber set"
+        short_description: "Typed hub instead of interface{} messages where possible."
+        description: "Parameterise the hub/topic map on the payload type for internal producers; keep an `any` façade at the wire edge."
+        priority: low
+        estimated_hours: 4
+
+  # ============================================================ P3
+  - name: "P3 — panic/recover discipline"
+    description: "recover exists only in HTTP middleware. Guard the goroutines whose panic currently kills a pool or a connection loop silently."
+    start_date: "2027-06-08"
+    end_date: "2027-06-21"
+    tasks:
+      - title: "P3: definition of done — panic/recover"
+        short_description: "Acceptance bar."
+        description: "Every long-lived goroutine (pool worker, per-conn reader/writer, scheduler tick) has a top-level recover that logs with stack + a metric and restarts or cleanly exits — never takes the process down. Tested by injecting a panic."
+        priority: low
+        estimated_hours: 1
+      - title: "P3: GoRender — recover in each pool worker"
+        short_description: "A panic in one render must not kill the pool."
+        description: "Wrap the worker loop body; on panic, fail that job, log, keep the worker alive."
+        priority: low
+        estimated_hours: 3
+      - title: "P3: GoStream — recover in per-connection read/write goroutines"
+        short_description: "One bad frame handler must not crash the server."
+        description: "Recover in the conn reader/writer; on panic, evict that connection, log, continue."
+        priority: low
+        estimated_hours: 3
+
+  # ============================================================ P4
+  - name: "P4 — crypto/tls depth (custom config, mTLS, x509)"
+    description: "Only 1 file touches crypto/tls. GoGate and GoFlare are proxies that need real TLS config, and mTLS for service-to-service."
+    start_date: "2027-06-22"
+    end_date: "2027-07-05"
+    tasks:
+      - title: "P4: definition of done — crypto/tls"
+        short_description: "Acceptance bar."
+        description: "Configurable min version + cipher suites, SNI-based cert selection where needed, optional mTLS to upstreams/peers with x509 verification, cert reload without restart, and a test using an in-memory CA."
+        priority: medium
+        estimated_hours: 2
+      - title: "P4: GoGate — custom tls.Config + mTLS to upstreams"
+        short_description: "Harden the listener; verify upstream certs."
+        description: "tls.Config with min 1.2, sane suites; per-route option to present a client cert and pin the upstream CA."
+        priority: medium
+        estimated_hours: 5
+      - title: "P4: GoFlare — edge TLS termination + client-cert capture"
+        short_description: "The edge sees every TLS failure — capture it as an event."
+        description: "Custom tls.Config on the edge listener; a `GetConfigForClient` hook that records handshake failures / expired client certs as GoFlare events."
+        priority: medium
+        estimated_hours: 5
+
+  # ============================================================ P5
+  - name: "P5 — database/sql transactions"
+    description: "Begin/BeginTx in only 4 files, no prepared-statement reuse. GoFlare's multi-row writes need real transactions."
+    start_date: "2027-07-06"
+    end_date: "2027-07-19"
+    tasks:
+      - title: "P5: definition of done — transactions"
+        short_description: "Acceptance bar."
+        description: "Multi-statement writes run in `BeginTx` with the right isolation, `defer tx.Rollback()` guard, context-aware, retry on serialization failure where applicable; hot queries use prepared statements; covered by a test against real Postgres (pgtest)."
+        priority: medium
+        estimated_hours: 2
+      - title: "P5: GoFlare — atomic issue upsert + event insert"
+        short_description: "Group + issue + event must land together or not at all."
+        description: "Wrap the pgingest path in a transaction; handle the dedupe/upsert race with ON CONFLICT + a retry."
+        priority: medium
+        estimated_hours: 5
+      - title: "P5: GoFlare — LISTEN/NOTIFY for new-issue fan-out"
+        short_description: "Push new issues to the UI without polling."
+        description: "Use pq's listener on an `issues` channel; the API streams new issues over SSE/WebSocket."
+        priority: low
+        estimated_hours: 4
+
+  # ============================================================ P8
+  - name: "P8 — io composition (io.Pipe / TeeReader / MultiWriter)"
+    description: "Only 1 file composes readers/writers. Use them to stream-and-hash / stream-and-log without buffering the whole payload."
+    start_date: "2027-07-20"
+    end_date: "2027-08-02"
+    tasks:
+      - title: "P8: definition of done — io composition"
+        short_description: "Acceptance bar."
+        description: "Each adopted path streams (constant memory) instead of ReadAll-then-process, verified by a benchmark showing flat allocs as input size grows."
+        priority: medium
+        estimated_hours: 1
+      - title: "P8: GoRender — tee ffmpeg stdout to progress parser + log"
+        short_description: "One read, two consumers."
+        description: "io.TeeReader / io.MultiWriter so `-progress` parsing and the debug log both see ffmpeg output without a second pipe."
+        priority: medium
+        estimated_hours: 3
+      - title: "P8: GoFlare — capture request body without buffering it"
+        short_description: "Edge must forward + inspect the body."
+        description: "io.TeeReader on the proxied body so capture sees it while it streams upstream; cap the captured size."
+        priority: medium
+        estimated_hours: 3
+      - title: "P8: GoDoc-style streaming in GoRender upload"
+        short_description: "Stream the artifact to object storage while hashing for dedup."
+        description: "io.MultiWriter(hash, uploadPart) so the content-hash and the upload share one pass."
+        priority: low
+        estimated_hours: 2
+
+  # ============================================================ P9
+  - name: "P9 — Reverse-proxy depth (Transport / Rewrite / ModifyResponse)"
+    description: "httputil.ReverseProxy used only at its most basic. GoGate and GoFlare both build on the proxy — use the full surface."
+    start_date: "2027-08-03"
+    end_date: "2027-08-16"
+    tasks:
+      - title: "P9: definition of done — proxy depth"
+        short_description: "Acceptance bar."
+        description: "Custom `Transport` (timeouts, pooling, HTTP/2), `Rewrite` (not the deprecated `Director`), `ModifyResponse` for header/body transforms, `ErrorHandler` that emits an event/metric, and streaming preserved (no full buffering). Tested."
+        priority: medium
+        estimated_hours: 2
+      - title: "P9: GoGate — full ReverseProxy config + per-route Transport"
+        short_description: "Timeouts, keep-alive pool, h2c, error hooks."
+        description: "Replace the basic proxy with a configured one: per-route dial/response timeouts, connection pool limits, `ModifyResponse` for header injection, `ErrorHandler` -> 502 + metric."
+        priority: medium
+        estimated_hours: 6
+      - title: "P9: GoFlare — ModifyResponse to capture upstream 5xx as events"
+        short_description: "Instrumentation-free error tracking, the core GoFlare pitch."
+        description: "`ModifyResponse` inspects status; 5xx / slow responses become GoFlare events with the trace id injected on the way in."
+        priority: medium
+        estimated_hours: 5
+
+  # ============================================================ P11
+  - name: "P11 — OpenTelemetry + Prometheus wired into the real services"
+    description: "Tracing/metrics exist only as GoPlatform demos. Wire /metrics and OTLP traces into the three request-path services."
+    start_date: "2027-08-17"
+    end_date: "2027-08-30"
+    tasks:
+      - title: "P11: definition of done — observability"
+        short_description: "Acceptance bar."
+        description: "Each service exposes Prometheus `/metrics` (RED metrics + service-specific), emits OTLP traces with context propagation across the proxy/gRPC boundary, and its README shows the local Prometheus+Tempo/Jaeger setup. Trace ids line up with GoFlare (P9)."
+        priority: medium
+        estimated_hours: 3
+      - title: "P11: GoGate — RED metrics + trace propagation through the proxy"
+        short_description: "Per-route latency histogram, error rate, in-flight; inject traceparent."
+        description: "otelhttp on the handler; propagate `traceparent` to upstreams; Prometheus histograms per route + limiter/cache counters."
+        priority: medium
+        estimated_hours: 5
+      - title: "P11: GoStream — connection + broadcast metrics + publish traces"
+        short_description: "conns gauge, messages/sec, drop counter, fan-out span."
+        description: "Prometheus gauges/counters for connections, publishes, slow-consumer drops; a span per publish covering fan-out latency."
+        priority: medium
+        estimated_hours: 4
+      - title: "P11: GoRender — job metrics + per-stage spans"
+        short_description: "queue depth, job duration histogram, failure counter; span per stage."
+        description: "Trace accept -> plan -> render -> upload with a span each; Prometheus histogram of end-to-end render time."
+        priority: medium
+        estimated_hours: 4
