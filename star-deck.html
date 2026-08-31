@@ -1,0 +1,776 @@
+<title>go-100days + V5 CoverGo — STAR Field Report</title>
+<style>
+  :root{
+    --bg: #0E1420; --surface: #161D2C; --surface-2: #1D2536; --text: #ECE8DE; --text-dim: #93A0B8;
+    --accent: #E2A23B; --accent-ink: #2A1B04; --verified: #56C9AE; --verified-ink: #06231D;
+    --rule: #2A3348; --shadow: 0 20px 50px -20px rgba(0,0,0,.55);
+    --mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", "Fira Code", Consolas, "Roboto Mono", monospace;
+    --serif: Charter, "Iowan Old Style", "Palatino Linotype", Georgia, "Noto Serif", serif;
+  }
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg: #EEF1F6; --surface: #FFFFFF; --surface-2: #F3F5FA; --text: #141A26; --text-dim: #55607A;
+      --accent: #A8701E; --accent-ink: #FFF6E6; --verified: #1E8F76; --verified-ink: #E6F7F2;
+      --rule: #D8DEE9; --shadow: 0 20px 50px -25px rgba(20,26,38,.25);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg: #0E1420; --surface: #161D2C; --surface-2: #1D2536; --text: #ECE8DE; --text-dim: #93A0B8;
+    --accent: #E2A23B; --accent-ink: #2A1B04; --verified: #56C9AE; --verified-ink: #06231D;
+    --rule: #2A3348; --shadow: 0 20px 50px -20px rgba(0,0,0,.55);
+  }
+  :root[data-theme="light"]{
+    --bg: #EEF1F6; --surface: #FFFFFF; --surface-2: #F3F5FA; --text: #141A26; --text-dim: #55607A;
+    --accent: #A8701E; --accent-ink: #FFF6E6; --verified: #1E8F76; --verified-ink: #E6F7F2;
+    --rule: #D8DEE9; --shadow: 0 20px 50px -25px rgba(20,26,38,.25);
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:
+      repeating-linear-gradient(180deg, transparent, transparent 39px, color-mix(in srgb, var(--rule) 55%, transparent) 40px),
+      var(--bg);
+    color:var(--text); font-family:var(--serif); -webkit-font-smoothing:antialiased;
+  }
+  ::selection{ background:var(--accent); color:var(--accent-ink); }
+  a{ color:inherit; }
+  h1,h2,h3{ text-wrap:balance; font-family:var(--mono); margin:0; }
+  p{ margin:0; }
+  code{ font-family:var(--mono); font-size:.94em; }
+  .eyebrow{ font-family:var(--mono); font-size:.72rem; letter-spacing:.14em; text-transform:uppercase; color:var(--text-dim); }
+
+  #deck{ height:100vh; overflow-y:auto; scroll-snap-type:y mandatory; scroll-behavior:smooth; }
+  @media (prefers-reduced-motion: reduce){ #deck{ scroll-behavior:auto; } }
+
+  .slide{
+    min-height:100vh; scroll-snap-align:start; display:flex; flex-direction:column; justify-content:center;
+    padding: clamp(2rem, 6vh, 4rem) clamp(1.25rem, 8vw, 8rem);
+    position:relative; border-bottom:1px solid var(--rule);
+  }
+
+  /* ---------- top progress + section rail ---------- */
+  #progress{ position:fixed; top:0; left:0; right:0; height:3px; background:var(--rule); z-index:60; }
+  #progress > i{ display:block; height:100%; width:0%; background:var(--accent); transition:width .1s linear; }
+
+  #rail{ position:fixed; right:clamp(.5rem, 2vw, 1.75rem); top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:.4rem; z-index:50; }
+  #rail button{
+    font-family:var(--mono); font-size:.6rem; letter-spacing:.05em; background:none; border:1px solid var(--rule);
+    color:var(--text-dim); padding:.26rem .5rem; border-radius:3px; cursor:pointer; text-align:right; min-width:4.6rem;
+    transition:border-color .15s, color .15s, background .15s;
+  }
+  #rail button:hover{ color:var(--text); border-color:var(--text-dim); }
+  #rail button[aria-current="true"]{ color:var(--accent-ink); background:var(--accent); border-color:var(--accent); font-weight:600; }
+  #rail button:focus-visible{ outline:2px solid var(--verified); outline-offset:2px; }
+  @media (max-width: 900px){ #rail{ display:none; } }
+
+  #tally{
+    position:fixed; left:clamp(1rem,3vw,1.75rem); bottom:clamp(1rem,3vh,1.5rem); z-index:50;
+    font-family:var(--mono); font-size:.68rem; color:var(--text-dim); letter-spacing:.04em;
+    background:color-mix(in srgb, var(--surface) 88%, transparent); border:1px solid var(--rule);
+    padding:.35rem .6rem; border-radius:99px; backdrop-filter:blur(6px);
+  }
+  #tally b{ color:var(--accent); font-variant-numeric:tabular-nums; }
+
+  /* ---------- Cover / overview / closing (unchanged shapes) ---------- */
+  .cover h1{ font-size:clamp(2.2rem, 6vw, 4.4rem); line-height:1.02; letter-spacing:-.01em; }
+  .cover h1 em{ font-style:normal; color:var(--accent); }
+  .cover .sub{ font-size:clamp(1rem, 1.6vw, 1.25rem); color:var(--text-dim); max-width:46ch; margin-top:1.4rem; line-height:1.55; }
+  .cover-meta{ display:flex; gap:clamp(1.5rem, 5vw, 4rem); margin-top:clamp(2.5rem, 6vw, 4rem); flex-wrap:wrap; }
+  .cover-meta .num{ font-family:var(--mono); font-size:clamp(1.8rem, 3.4vw, 2.6rem); color:var(--accent); font-variant-numeric:tabular-nums; line-height:1; }
+  .cover-meta .lbl{ font-family:var(--mono); font-size:.68rem; letter-spacing:.1em; text-transform:uppercase; color:var(--text-dim); margin-top:.4rem; }
+  .scrolldown{ position:absolute; left:clamp(1.25rem, 8vw, 8rem); bottom:2rem; font-family:var(--mono); font-size:.68rem; letter-spacing:.1em; color:var(--text-dim); display:flex; align-items:center; gap:.5rem; }
+  .scrolldown .arrow{ animation:bob 1.8s ease-in-out infinite; }
+  @media (prefers-reduced-motion: reduce){ .scrolldown .arrow{ animation:none; } }
+  @keyframes bob{ 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(4px);} }
+
+  .kicker-row{ display:flex; align-items:baseline; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:1.6rem; }
+  .overview h2{ font-size:clamp(1.4rem, 2.8vw, 2rem); }
+  .star-strip{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px,1fr)); gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:8px; overflow:hidden; margin-top:1.75rem; }
+  .star-strip > div{ background:var(--surface); padding:1.25rem 1.4rem; }
+  .star-strip .k, .star-block .k{ font-family:var(--mono); font-size:.66rem; letter-spacing:.12em; text-transform:uppercase; color:var(--accent); display:block; margin-bottom:.5rem; }
+  .star-strip p{ font-size:.94rem; line-height:1.55; color:var(--text); }
+  .phase-map{ margin-top:2.25rem; display:flex; flex-direction:column; gap:.35rem; }
+  .phase-map-row{ display:grid; grid-template-columns: 5.5rem 1fr auto; align-items:center; gap:1rem; padding:.5rem .7rem; border-radius:6px; cursor:pointer; border:none; background:none; text-align:left; width:100%; font-family:var(--serif); color:var(--text); }
+  .phase-map-row:hover{ background:var(--surface-2); }
+  .phase-map-row .code{ font-family:var(--mono); font-size:.78rem; color:var(--text-dim); font-variant-numeric:tabular-nums; }
+  .phase-map-row .name{ font-size:.92rem; }
+  .phase-map-row .count{ font-family:var(--mono); font-size:.72rem; color:var(--verified); white-space:nowrap; }
+
+  .closing .metric-wall{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:8px; overflow:hidden; margin:1.75rem 0 2rem; }
+  .metric-wall > div{ background:var(--surface); padding:1.1rem 1.2rem; }
+  .metric-wall .n{ font-family:var(--mono); font-size:1.7rem; color:var(--accent); font-variant-numeric:tabular-nums; }
+  .metric-wall .l{ font-family:var(--mono); font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:var(--text-dim); margin-top:.3rem; }
+  .closing .fixlist{ display:flex; flex-direction:column; gap:.65rem; margin-top:.5rem; padding:0; }
+  .closing .fixlist li{ list-style:none; font-size:.9rem; line-height:1.55; display:flex; gap:.6rem; }
+  .closing .fixlist li::before{ content:"→"; color:var(--accent); font-family:var(--mono); flex:none; }
+  .closing .star-grid{ display:grid; grid-template-columns:1.05fr 1fr; gap:clamp(1rem,3vw,2.25rem); margin-top:1.5rem; }
+  @media (max-width: 860px){ .closing .star-grid{ grid-template-columns:1fr; } }
+
+  .star-block{ padding-bottom:1.1rem; margin-bottom:1.1rem; border-bottom:1px solid var(--rule); }
+  .star-block:last-child{ border-bottom:none; margin-bottom:0; }
+  .star-block p{ font-size:.96rem; line-height:1.6; }
+
+  footer.slide-foot{ margin-top:clamp(1.5rem,4vh,2.5rem); display:flex; justify-content:space-between; font-family:var(--mono); font-size:.62rem; color:var(--text-dim); letter-spacing:.08em; }
+
+  /* ---------- Section divider slide ---------- */
+  .divider .phase-code{ font-family:var(--mono); font-size:.78rem; color:var(--text-dim); letter-spacing:.06em; }
+  .divider .phase-code b{ color:var(--accent); font-weight:700; }
+  .divider h2{ font-size:clamp(1.8rem, 4.2vw, 3.2rem); margin-top:.5rem; max-width:20ch; }
+  .divider .dek{ font-size:1rem; color:var(--text-dim); max-width:56ch; margin-top:1rem; line-height:1.6; }
+  .divider .concept-list{ display:flex; flex-wrap:wrap; gap:.4rem; margin-top:1.75rem; max-width:70ch; }
+  .divider .concept-list span{ font-family:var(--mono); font-size:.7rem; padding:.3rem .6rem; border-radius:4px; background:var(--surface-2); border:1px solid var(--rule); color:var(--text-dim); }
+  .divider .concept-row{ display:grid; grid-template-columns:1fr 1fr; gap:1px; background:var(--rule); border:1px solid var(--rule); border-radius:8px; overflow:hidden; margin-top:2rem; max-width:70ch; }
+  @media (max-width: 700px){ .divider .concept-row{ grid-template-columns:1fr; } }
+  .divider .concept-row > div{ background:var(--surface); padding:1.1rem 1.3rem; }
+  .divider .concept-row .k{ font-family:var(--mono); font-size:.64rem; letter-spacing:.12em; text-transform:uppercase; color:var(--text-dim); display:block; margin-bottom:.4rem; }
+  .divider .concept-row p{ font-size:.88rem; line-height:1.55; }
+  .divider .concept-row .practical .k{ color:var(--verified); }
+  .divider .status-chip{
+    font-family:var(--mono); font-size:.66rem; letter-spacing:.1em; text-transform:uppercase;
+    background:var(--verified-ink); color:var(--verified); border:1px solid color-mix(in srgb, var(--verified) 45%, transparent);
+    padding:.35rem .6rem; border-radius:99px; white-space:nowrap; display:inline-block; margin-top:1.5rem;
+  }
+
+  /* ---------- Single-concept slide: title on top, STAR grid + arrows below ---------- */
+  .concept-slide{ align-items:center; }
+  .concept-head{ text-align:center; margin-bottom:clamp(2rem,6vh,3.5rem); }
+  .concept-head .day{ font-family:var(--mono); font-size:.7rem; color:var(--accent); font-variant-numeric:tabular-nums; letter-spacing:.04em; }
+  .concept-head .sec{ display:block; font-family:var(--mono); font-size:.62rem; letter-spacing:.08em; text-transform:uppercase; color:var(--text-dim); margin-top:.35rem; }
+  .concept-head h2{ font-family:var(--mono); font-size:clamp(2.1rem, 5vw, 3.5rem); color:var(--text); letter-spacing:-.01em; margin-top:.6rem; line-height:1.05; }
+
+  .star-diagram{
+    position:relative;
+    display:grid;
+    grid-template-columns: minmax(220px,1fr) minmax(220px,1fr);
+    grid-template-rows: auto auto;
+    column-gap: clamp(3rem,10vw,7rem);
+    row-gap: clamp(2.5rem,8vh,4.5rem);
+    width:100%;
+    max-width:920px;
+    margin:0 auto;
+  }
+  .star-diagram svg.arrows{ position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none; }
+  .star-diagram svg.arrows path{ fill:none; stroke:var(--accent); stroke-width:2; stroke-linecap:round; opacity:.5; }
+  @media (max-width: 760px){ .star-diagram svg.arrows{ display:none; } }
+
+  .star-diagram .box{ position:relative; max-width:34ch; }
+  .star-diagram .box .num{
+    font-family:var(--mono); font-size:.66rem; color:var(--accent-ink); background:var(--accent);
+    width:1.3rem; height:1.3rem; border-radius:50%; display:inline-flex; align-items:center; justify-content:center;
+    margin-bottom:.55rem; font-weight:700;
+  }
+  .star-diagram .box .k{ font-family:var(--mono); font-size:.66rem; letter-spacing:.14em; text-transform:uppercase; color:var(--text-dim); display:block; margin-bottom:.4rem; }
+  .star-diagram .box p{ font-size:clamp(.92rem,1.3vw,1.05rem); line-height:1.55; }
+  .star-diagram .box.result p{ color:var(--verified); }
+  .star-diagram .box.result .num{ background:var(--verified); color:var(--verified-ink); }
+
+  .star-diagram .box.situation{ grid-column:1; grid-row:1; }
+  .star-diagram .box.task{ grid-column:1; grid-row:2; }
+  .star-diagram .box.action{ grid-column:2; grid-row:1; }
+  .star-diagram .box.result{ grid-column:2; grid-row:2; }
+  @media (max-width: 760px){
+    .star-diagram{ grid-template-columns:1fr; row-gap:1.5rem; max-width:44ch; }
+    .star-diagram .box{ grid-column:1 !important; max-width:44ch; }
+    .star-diagram .box.situation{ grid-row:1; } .star-diagram .box.task{ grid-row:2; }
+    .star-diagram .box.action{ grid-row:3; } .star-diagram .box.result{ grid-row:4; }
+  }
+
+  /* ---------- Chrome: fullscreen toggle ---------- */
+  #fsBtn{
+    position:fixed; top:clamp(.6rem,2vh,1rem); right:clamp(.6rem,2vw,1rem); z-index:60;
+    font-family:var(--mono); font-size:.85rem; width:2.1rem; height:2.1rem; border-radius:50%;
+    background:color-mix(in srgb, var(--surface) 88%, transparent); border:1px solid var(--rule); color:var(--text-dim);
+    cursor:pointer; backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center;
+    transition:color .15s, border-color .15s;
+  }
+  #fsBtn:hover{ color:var(--text); border-color:var(--text-dim); }
+  #fsBtn:focus-visible{ outline:2px solid var(--verified); outline-offset:2px; }
+  #fsBtn[aria-pressed="true"]{ color:var(--accent); border-color:var(--accent); }
+
+  /* Focus mode: a CSS fallback that always visibly does something, even when the
+     real Fullscreen API is blocked by the artifact viewer's own iframe sandbox. */
+  html.is-focus #rail, html.is-focus #progress{ opacity:0; pointer-events:none; }
+  html.is-focus #tally{ opacity:.35; }
+  html.is-focus #tally:hover{ opacity:1; }
+  html.is-focus #fsBtn{ opacity:.35; }
+  html.is-focus #fsBtn:hover, html.is-focus #fsBtn:focus-visible{ opacity:1; }
+  html.is-focus, html.is-focus body{ background:var(--bg); }
+  #rail, #tally, #progress{ transition:opacity .35s ease; }
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <marker id="arrowhead" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="var(--accent)"></path>
+    </marker>
+  </defs>
+</svg>
+
+<div id="progress"><i></i></div>
+<div id="rail" role="tablist" aria-label="Section navigation"></div>
+<div id="tally"></div>
+<button id="fsBtn" type="button" aria-label="Toggle fullscreen" aria-pressed="false">⛶</button>
+
+<main id="deck">
+
+  <section class="slide cover" id="s-cover" data-label="COVER" data-section="-1">
+    <span class="eyebrow">go-100days · V5 covergo · field report</span>
+    <h1>119 concepts.<br><em>One slide each.</em></h1>
+    <p class="sub">A 100-day senior-Go curriculum (V3), then the measurement-and-performance half of it applied to five real V5 services (CoverGo). Every one gets its own full Situation → Task → Action → Result slide — 14 sections, never flattened into a table.</p>
+    <div class="cover-meta">
+      <div><div class="num">119</div><div class="lbl">concept slides</div></div>
+      <div><div class="num">14</div><div class="lbl">sections</div></div>
+      <div><div class="num">2</div><div class="lbl">bodies of work</div></div>
+    </div>
+    <div class="scrolldown"><span class="arrow">↓</span> scroll, arrow keys, or the rail</div>
+  </section>
+
+  <section class="slide overview" id="s-overview" data-label="OVERVIEW" data-section="-1">
+    <div class="kicker-row">
+      <span class="eyebrow">Situation, overall</span>
+      <span class="phase-code">V1 → V2 → <b>V3</b></span>
+    </div>
+    <h2>Two real production apps covered ~29% of a senior-Go curriculum.<br>The other 71% became 100 standalone projects — then five of its ideas hardened five real services.</h2>
+    <div class="star-strip">
+      <div><span class="k">Situation</span><p>An internal audit (<code>StatusGo.md</code>) scored two shipped apps against a 100-topic senior-Go plan — concurrency, testing, observability, distributed systems and security depth almost entirely untouched. Separately, <code>featureGo.md</code> pitched five V5 services on 6–30× wins, every figure "indicative, not measured."</p></div>
+      <div><span class="k">Task</span><p>V3: close the curriculum gap with real, running software — one project per day, verified against real inputs. V5: turn "indicative" into "measured" — one Go concept per sprint, applied to GoGate / GoStream / GoRender / GoFlare / GoSnow with a passing benchmark or test.</p></div>
+      <div><span class="k">Action</span><p>Sections 01–09: 100 concepts, each its own STAR, capped by a live microservices capstone. Sections 10–14: 19 CoverGo concepts in one session, each landing in real code with a measurement.</p></div>
+      <div><span class="k">Result</span><p>100/100 shipped and verified. 19/19 CoverGo concepts landed — GoGate proxy <b style="color:var(--accent)">−58% B/op</b>, GoStream broadcast <b style="color:var(--accent)">0 allocs/op</b>, ws unmask <b style="color:var(--accent)">7.8×</b>, a real panic-deadlock fixed, all 5 repos green.</p></div>
+    </div>
+    <div class="phase-map" id="phase-map"></div>
+  </section>
+
+  <!-- section divider + concept slides are rendered here by JS -->
+  <div id="generated"></div>
+
+  <section class="slide closing" id="s-closing" data-label="V3" data-section="-1">
+    <div class="kicker-row">
+      <span class="eyebrow">Beyond the 100 days</span>
+      <span class="phase-code">this session · <b>V3</b></span>
+    </div>
+    <h2 style="font-size:clamp(1.5rem,3vw,2.1rem); max-width:26ch;">V2 was one workspace. V3 makes every concept stand on its own.</h2>
+    <div class="star-grid">
+      <div>
+        <div class="star-block"><span class="k">Situation</span><p>All 100 V2 projects shared one <code>go.work</code> workspace — convenient to build together, but no single project could be handed off or built alone.</p></div>
+        <div class="star-block"><span class="k">Task</span><p>Copy V2 into V3 as fully standalone modules, then audit and refactor the largest, riskiest files for real maintainability.</p></div>
+        <div class="star-block">
+          <span class="k">Action</span>
+          <ul class="fixlist">
+            <li>De-workspaced all 100 projects; vendored the one real cross-project dependency (Day 12's circuit breaker) where needed.</li>
+            <li>Added a Redis container for the 4 projects that are real Redis clients — no DB container, since nothing else in 100 projects touches Postgres, MySQL, or Mongo.</li>
+            <li>Refactored the 8 largest files (649 → 185 lines, max) by splitting on responsibility and deduplicating repeated logic.</li>
+            <li>Fixed a real concurrency bug found along the way: a package-level global var shared across <code>Generator</code> instances.</li>
+          </ul>
+        </div>
+      </div>
+      <div>
+        <div class="metric-wall">
+          <div><div class="n">100</div><div class="l">concepts, standalone</div></div>
+          <div><div class="n">88→100</div><div class="l">build clean</div></div>
+          <div><div class="n">8</div><div class="l">files refactored</div></div>
+          <div><div class="n">649→185</div><div class="l">max file length</div></div>
+        </div>
+        <div class="star-block" style="border:none; padding:0;">
+          <span class="k">Result</span>
+          <p style="font-size:.94rem; line-height:1.6;">Every refactor target: build, <code>vet</code>, and its full existing test suite green — <b style="color:var(--verified)">zero behavior changed</b>, only structure, duplication, and two real bugs.</p>
+        </div>
+      </div>
+    </div>
+    <footer class="slide-foot"><span>go-100days · V3</span><span>continues →</span></footer>
+  </section>
+
+  <section class="slide closing" id="s-closing-v5" data-label="V5" data-section="-1">
+    <div class="kicker-row">
+      <span class="eyebrow">Sections 10–14 · what CoverGo actually was</span>
+      <span class="phase-code">featureGo.md → <b>measured</b></span>
+    </div>
+    <h2 style="font-size:clamp(1.5rem,3vw,2.1rem); max-width:32ch;">featureGo.md said "benchmark the one you build first." This session built the benchmarks.</h2>
+    <div class="star-grid">
+      <div>
+        <div class="star-block"><span class="k">Situation</span><p>The <code>featureGo.md</code> audit ended with a warning: the 6–30× multipliers "come from workload shape crossed with runtime characteristics, not measurements — treat them as which order of magnitude, then benchmark."</p></div>
+        <div class="star-block"><span class="k">Task</span><p>Turn "indicative" into "measured" for the parts measurable on this machine, across GoGate / GoStream / GoRender / GoFlare / GoSnow — and mark the rest honestly.</p></div>
+        <div class="star-block">
+          <span class="k">Action</span>
+          <ul class="fixlist">
+            <li>19 concepts (S0 → P9), each with a <code>testing.B</code> or a test; <code>-count=6</code> baselines committed to <code>bench/latest.txt</code>.</li>
+            <li>Two latent bugs fixed as side effects: the cache panic-deadlock (U17), a half-written artifact left downloadable on failure (U19).</li>
+            <li><code>golang.org/x/sync</code> adopted in GoFlare / GoRender / GoGate — a deliberate, documented break from stdlib-only.</li>
+            <li>23 tasks needing cgo (DuckDB), gRPC codegen or a linux CI stay <code>todo</code> with a comment naming the blocker.</li>
+          </ul>
+        </div>
+      </div>
+      <div>
+        <div class="metric-wall">
+          <div><div class="n">19</div><div class="l">concepts landed</div></div>
+          <div><div class="n">0→5</div><div class="l">repos with CI</div></div>
+          <div><div class="n">−58%</div><div class="l">proxy B/op</div></div>
+          <div><div class="n">7.8×</div><div class="l">ws unmask</div></div>
+        </div>
+        <div class="star-block" style="border:none; padding:0;">
+          <span class="k">Result</span>
+          <p style="font-size:.94rem; line-height:1.6;">Every landed concept: <code>go vet</code> + <code>go test</code> green, with a benchmark or test that fails on regression. The <code>featureGo.md</code> numbers are still projections — <b style="color:var(--verified)">but now there is a harness to check them against.</b> All pushed to <code>github.com/devLevelcoding/v6</code>.</p>
+        </div>
+      </div>
+    </div>
+    <footer class="slide-foot"><span>V5 · covergo · session 2</span><span>end</span></footer>
+  </section>
+
+</main>
+
+<script>
+var SECTIONS = [
+{code:"01", name:"Foundations", days:"01–21",
+ dek:"Core service patterns: CLI tools, traffic shaping, auth, background work, and the data-consistency and resilience patterns everything later reuses.",
+ theoretical:"REST &amp; gRPC service design, JWT auth, connection pooling, rate limiting, structured observability.",
+ practical:"21 services composed on one Docker network; 7 real bugs found only by running real clients against real servers.",
+ status:"21/21 verified · 1 live",
+ concepts:[
+  {name:"cli-tasks", s:"No offline task manager pattern.", t:"Build a bbolt-backed CLI.", a:"Cobra commands over an embedded KV file.", r:"Verified via real add/list/done/delete round-trips, Dockerized."},
+  {name:"load-balancer", s:"No traffic-distribution logic written.", t:"Round-robin two independent backends.", a:"Reverse-proxy load balancer.", r:"Verified routing real requests to report-gen and otel-sidecar."},
+  {name:"rate-limiter", s:"No request-throttling code existed.", t:"Build a token-bucket limiter.", a:"In-memory + Redis-backed bucket.", r:"Real concurrent bursts measured against capacity+refill; reused by Days 85, 98."},
+  {name:"chunked-upload", s:"No large-file upload handling.", t:"Support resumable chunked uploads.", a:"HTTP chunked-upload service.", r:"Verified real multi-chunk upload reassembly."},
+  {name:"jwt-auth", s:"JWT existed but untested, unstructured.", t:"Build a real HS256 issue/verify service.", a:"golang-jwt/v5 + bcrypt + Redis blacklist.", r:"Verified issue/verify/revoke cycle; reused by Days 84, 97, 100."},
+  {name:"csv-pipeline", s:"No streaming file-processing code.", t:"Build a CSV ingest/transform pipeline.", a:"Streaming reader/writer.", r:"Verified against a real multi-row CSV file."},
+  {name:"webhook-dispatcher", s:"No outbound delivery/retry pattern.", t:"Dispatch events to subscribers.", a:"Event/Subscriber/DeadLetter model.", r:"Verified real delivery + DLQ; extended by Days 76, 84."},
+  {name:"metrics-aggregator", s:"No metrics-collection code.", t:"Aggregate app metrics for scraping.", a:"Prometheus-style aggregator.", r:"Verified real metric ingestion; extended by Day 75."},
+  {name:"grpc-employee", s:"REST only, no gRPC anywhere.", t:"Build a real gRPC service.", a:"protoc-generated service + reflection.", r:"Hand-written .pb.go bug found &amp; fixed — regenerated with real protoc; reused by Days 20, 26, 93, 100."},
+  {name:"job-runner", s:"No scheduled/background job pattern.", t:"Build a cron-style job runner.", a:"robfig/cron scheduler service.", r:"Verified real scheduled job execution."},
+  {name:"event-sourcing", s:"No event-sourced domain modeled.", t:"Build an append-only event store.", a:"EventRecord + Apply/Rebuild bank-account aggregate.", r:"Real replay reconstructed exact state; extended by Days 77, 96, 100."},
+  {name:"circuit-breaker", s:"No resilience pattern against failing calls.", t:"Build a generic circuit breaker.", a:"Generic CLOSED/OPEN/HALF-OPEN breaker.", r:"Verified real trip/recover cycle; directly imported by Days 64, 100."},
+  {name:"kvstore", s:"No RESP-like protocol server.", t:"Build a Redis-like KV store.", a:"TCP server with GET/SET/DEL/LRANGE.", r:"Short-read bug in multi-value replies found &amp; fixed (io.ReadFull); later proxied by Day 23."},
+  {name:"task-queue", s:"No Redis-backed queue pattern.", t:"Build a producer/consumer/worker queue.", a:"Redis queue + worker pool.", r:"Expired-context bug in final stats found &amp; fixed."},
+  {name:"api-gateway", s:"No unified front door for services.", t:"Build an auth+rate-limit+routing gateway.", a:"Plugin-chain router + reverse proxy.", r:"Verified real routing; core reused unmodified by Day 90, ported by Day 100."},
+  {name:"realtime-chat", s:"No WebSocket pub/sub hub.", t:"Build a real-time chat hub.", a:"Register/broadcast hub over gorilla/websocket.", r:"Live messages were silently never delivered — a Hub-shadowing bug found &amp; fixed; hub reused by Day 100."},
+  {name:"query-builder", s:"No SQL query DSL.", t:"Build a fluent SQL builder.", a:"Generic Select/Insert/Update/Delete builders.", r:"Generated SQL verified against 24 real test cases."},
+  {name:"otel-sidecar", s:"No distributed tracing anywhere.", t:"Front a service with a tracing sidecar.", a:"Real OTel SDK spans + metrics.", r:"Verified real trace spans; extended by Day 65."},
+  {name:"multitenant", s:"No multi-tenant isolation pattern.", t:"Build tenant-scoped data access.", a:"Per-tenant scoping middleware.", r:"A missing strings import build error found &amp; fixed."},
+  {name:"report-gen", s:"No cross-service data aggregation.", t:"Generate reports from live employee data.", a:"Real gRPC call to grpc-employee, synthetic fallback.", r:"A template comma-bug (500s) and a CSV-format bug both found &amp; fixed."},
+  {name:"go-social", s:"No social-graph product built end-to-end.", t:"Ship an Instagram-style backend, live.", a:"Register/follow/feed/posts + song catalog.", r:"Deployed live on Cloud Run — two real GCP deploy errors hit and fixed."}
+ ]},
+{code:"02", name:"Protocols &amp; Networking", days:"22–30",
+ dek:"Every prior service rode on a library. Here the wire protocol itself gets implemented, from raw sockets up.",
+ theoretical:"Transport vs. application layering, frame/packet structure, protocol multiplexing.",
+ practical:"Every protocol checked against a real curl, raw socket, or second hand-rolled client — not a spec citation.",
+ status:"9/9 verified",
+ concepts:[
+  {name:"ws-raw", s:"WebSocket only ever used via a library.", t:"Implement RFC 6455 from raw net.Conn.", a:"Hand-rolled handshake + frame masking.", r:"An independent client recomputed Sec-WebSocket-Accept — it matched."},
+  {name:"tcp-proxy", s:"No L4 proxy written.", t:"Proxy real TCP traffic to another service.", a:"TCP reverse proxy fronting Day 13's kvstore.", r:"PING/SET/GET/DEL round-tripped through the proxy with real replies."},
+  {name:"http-parser", s:"HTTP parsing only ever seen via net/http.", t:"Parse RFC 7230 requests from a raw listener.", a:"Hand-rolled request-line/header/chunked parser.", r:"Verified against real curl, incl. malformed-line and bad-Content-Length rejection."},
+  {name:"sse-feed", s:"No server-push mechanism.", t:"Stream live events over one connection.", a:"text/event-stream endpoint, two event types.", r:"A client received 9 events ~300ms apart — live push, not buffered."},
+  {name:"grpc-gateway", s:"No REST-to-gRPC bridge.", t:"Front grpc-employee with a REST gateway.", a:"Transcoding gateway, all 4 RPC shapes.", r:"All four RPCs verified with real data through the gateway."},
+  {name:"udp-service", s:"No UDP protocol work.", t:"Build a real NTP client+server.", a:"RFC 5905 SNTP client + from-scratch NTP server.", r:"Real UDP round trip to time.google.com, real offset computed."},
+  {name:"http2-push", s:"No HTTP/2-specific behavior exercised.", t:"Prove real stream multiplexing.", a:"TLS server with http.Pusher.", r:"A concurrent fast request completed mid-flight of a 1.5s request, same connection."},
+  {name:"mdns-discovery", s:"No service-discovery protocol.", t:"Implement mDNS query/response.", a:"RFC 1035 wire format over 224.0.0.251:5353.", r:"Two real Docker containers discovered each other over real multicast."},
+  {name:"webrtc-signal", s:"No signaling relay pattern.", t:"Relay SDP/ICE between peers.", a:"WebSocket-based signaling server.", r:"Two simulated peers exchanged a full real offer/answer/ICE both directions."}
+ ]},
+{code:"03", name:"Concurrency &amp; Runtime", days:"31–40",
+ dek:"The single biggest gap in the original audit. Every concept here is proven with a benchmark, a race-detector run, or a live goroutine count.",
+ theoretical:"CSP concurrency model, the Go memory model, scheduler fairness, backpressure.",
+ practical:"Every claim backed by a benchmark, a -race run, or a live goroutine count — including two self-caught bugs.",
+ status:"10/10 verified",
+ concepts:[
+  {name:"worker-pool", s:"No elastic goroutine pool.", t:"Scale workers with load.", a:"Pool that grows/shrinks on demand.", r:"Real scale-up 2→5 and scale-down 5→2 logged live, twice."},
+  {name:"fanout-fanin", s:"No backpressure-aware pipeline.", t:"Prove real backpressure, not simulated.", a:"Bounded-channel fan-out/fan-in.", r:"Producer-send gap jumped ~0→63ms once channels filled; a real race bug self-caught &amp; fixed."},
+  {name:"ctx-propagation", s:"Cancellation never exercised across goroutines.", t:"Propagate cancellation through a deep call chain.", a:"5-layer goroutine chain honoring context.Cause.", r:"A mid-chain cancel stopped all 5 layers within ~10ms."},
+  {name:"pprof-leak-hunt", s:"No profiling ever used.", t:"Find and fix a real goroutine leak.", a:"Unbuffered-channel leak diagnosed via pprof.", r:"+171 goroutines under load, confirmed flat (+2) after the fix."},
+  {name:"sync-pool-reuse", s:"No allocation-reduction technique applied.", t:"Cut allocs/op with sync.Pool.", a:"Scratch-buffer pooling.", r:"0 allocs/op pooled vs. 1 (64B) unpooled, via real benchmarks."},
+  {name:"semaphore-limiter", s:"No bounded-concurrency primitive.", t:"Cap concurrency at exactly N.", a:"chan struct{} counting semaphore.", r:"50 goroutines vs. limit 5 peaked at exactly 5, zero violations."},
+  {name:"actor-model", s:"No lock-free concurrency pattern.", t:"Model state via message-passing actors.", a:"5 bank-account actors, no shared memory.", r:"200 concurrent transfers, money conserved exactly, -race clean."},
+  {name:"coop-scheduler", s:"No custom scheduler written.", t:"Build a cooperative priority scheduler.", a:"Goroutine + resume/yield handshake.", r:"A late high-priority task still ran before two already-queued low-priority ones."},
+  {name:"race-hunt", s:"No data race ever caught on purpose.", t:"Catch and fix a real race.", a:"Unsynchronized value++ under -race.", r:"Up to 44% of updates lost pre-fix; atomic.AddInt64 fixed it, reverified clean."},
+  {name:"generics-collections", s:"No generics used anywhere.", t:"Build generic collection types.", a:"Queue[T]/Stack[T]/Set[T comparable].", r:"93.2% test coverage across int, string, and a struct type."}
+ ]},
+{code:"04", name:"Data &amp; Storage Engines", days:"41–50",
+ dek:"Every prior storage need was \"call a library.\" Here the data structures underneath get built, and their textbook properties get measured.",
+ theoretical:"Amortized complexity, durability guarantees, index &amp; compaction strategy.",
+ practical:"Measured against the theoretical prediction, not just \"it compiles and returns the right value once.\"",
+ status:"10/10 verified",
+ concepts:[
+  {name:"lru-cache", s:"No custom cache eviction logic.", t:"Build a real LRU with TTL.", a:"container/list + map, generic.", r:"A 150ms-TTL entry present at 80ms, gone at 180ms — real time."},
+  {name:"bloom-filter", s:"No probabilistic data structure built.", t:"Build a Bloom filter from scratch.", a:"Word-packed bit array, double hashing.", r:"0 false negatives on 100k keys; 0.016 measured FP rate vs. 0.010 theoretical."},
+  {name:"consistent-hash", s:"No sharding strategy beyond hash%N.", t:"Build a consistent-hash ring.", a:"FNV-1a ring with virtual replicas.", r:"Node-add remapped 30.8% of keys vs. naive modulo's 74.7%."},
+  {name:"wal", s:"No durability guarantee ever tested.", t:"Build a write-ahead log.", a:"fsync'd append-only log + recovery.", r:"A child process SIGKILL'd mid-stream — recovery replayed exactly the durable set."},
+  {name:"search-index", s:"No full-text search built.", t:"Build an inverted-index engine.", a:"TF-IDF ranked AND queries.", r:"6/6 hand-checked correctness assertions passed on a real 20-doc corpus."},
+  {name:"lsm-tree", s:"No LSM-style storage engine.", t:"Build a memtable + segment engine.", a:"Flush, tombstones, full compaction.", r:"3 values for one key across 3 segments correctly returned the newest on read."},
+  {name:"mini-orm", s:"No reflection-based ORM.", t:"Build active-record CRUD over database/sql.", a:"Struct-tag reflection + generics, real SQLite.", r:"9/9 checks passed, incl. persistence across file close/reopen."},
+  {name:"migrate-tool", s:"No schema-migration tool.", t:"Build versioned up/down migrations.", a:"Migration runner against the same SQLite file.", r:"4 real migrations applied, then rolled back, verified via sqlite_master directly."},
+  {name:"conn-pool", s:"No generic connection pool.", t:"Build a bounded, health-checked pool.", a:"Pool[T any] over a real TCP echo server.", r:"40 goroutines vs. 5 slots peaked at exactly 5, plus real health-check eviction."},
+  {name:"timeseries-store", s:"No time-series storage built.", t:"Build ingestion + downsampling.", a:"1-minute/1-hour rollup buckets.", r:"7200 real points ingested; downsampled min/max/avg matched hand-computed values exactly."}
+ ]},
+{code:"05", name:"Security", days:"51–60",
+ dek:"Both real production apps had JWT auth and nothing past it. Here every attack attempted — replay, forgery, brute force — is shown blocked, not assumed blocked.",
+ theoretical:"Threat modeling, cryptographic primitives (ECDSA, AES-GCM), defense in depth.",
+ practical:"Replay, forgery, and brute-force attacks are actually attempted against the server and shown blocked.",
+ status:"10/10 verified",
+ concepts:[
+  {name:"oauth2-server", s:"No OAuth2 flow implemented.", t:"Build a real authorization-code flow.", a:"/authorize + /token + /resource, no external lib.", r:"Replaying a used code revoked every token it issued (RFC 6749 §10.5)."},
+  {name:"mtls-services", s:"No mutual-TLS ever configured.", t:"Enforce real client-cert auth.", a:"Self-signed CA signing server + 2 client certs.", r:"Correct cert succeeds; no cert and wrong-CA cert both fail with real TLS errors."},
+  {name:"apikey-service", s:"No API-key lifecycle management.", t:"Issue/rotate/revoke keys safely.", a:"Store only sha256(key), never the raw value.", r:"Rotation invalidates the old key immediately, zero grace window."},
+  {name:"rbac-engine", s:"No role/permission enforcement.", t:"Gate routes by (role, action, resource).", a:"Policy engine wired into HTTP middleware.", r:"Real 403s returned for disallowed role/action/resource combinations."},
+  {name:"secrets-manager", s:"No encrypted secret storage.", t:"Build a Vault-lite KV store.", a:"AES-256-GCM with leased reads.", r:"A 200ms lease measurably expired at 206ms — real TTL."},
+  {name:"webauthn-login", s:"No passwordless login.", t:"Build WebAuthn-style challenge/response.", a:"Real ECDSA P-256 keypair + VerifyASN1.", r:"A forged assertion and a replayed challenge both rejected by real crypto."},
+  {name:"security-headers", s:"No security-header middleware.", t:"Apply CSP/HSTS/etc. + reporting.", a:"Header middleware + CSP report-uri collector.", r:"Verified on real HTTP responses, plus a real parsed violation report."},
+  {name:"audit-log-chain", s:"No tamper-evident logging.", t:"Build a hash-chained audit log.", a:"Each entry hashes the previous.", r:"Altering one entry breaks every subsequent link — detected and pinpointed."},
+  {name:"field-encryption", s:"No column-level encryption.", t:"Encrypt sensitive fields at rest.", a:"AES-256-GCM on one field, others plaintext.", r:"Wrong key and tampered ciphertext both fail cleanly via AEAD auth."},
+  {name:"login-lockout", s:"No brute-force protection.", t:"Build progressive lockout.", a:"Exponential per-account + per-IP lockout.", r:"Delay measured growing 100ms→200ms under real timing; resets on success."}
+ ]},
+{code:"06", name:"Distributed Systems", days:"61–70",
+ dek:"No consensus, replication, or cross-service transaction pattern existed anywhere. Here partitions and process kills are actually induced, not narrated.",
+ theoretical:"CAP theorem trade-offs, consensus safety (Raft §5.4.2), eventual consistency.",
+ practical:"Partitions, process kills, and concurrent operations are actually induced with goroutines and channels.",
+ status:"10/10 verified",
+ concepts:[
+  {name:"leader-election", s:"No consensus/leadership pattern.", t:"Implement the Bully algorithm.", a:"5 goroutine nodes over real channels.", r:"Re-election chained correctly through two consecutive kills (5→4→3)."},
+  {name:"dist-lock", s:"No distributed locking.", t:"Build a Redlock-style quorum lock.", a:"Fencing-token lock over real HTTP.", r:"Quorum-based mutual exclusion verified across nodes."},
+  {name:"raft-toy", s:"No real consensus algorithm.", t:"Implement term-based election + replication.", a:"Majority-quorum log replication, own-term-only commit rule.", r:"A command proposed during a real partition was provably absent from the minority's log."},
+  {name:"mesh-sidecar", s:"No combined resilience sidecar.", t:"Combine mTLS + retries + circuit breaker.", a:"Imports Day 12's breaker directly, ports Day 52's CA logic.", r:"Zero further attempts once OPEN, confirmed via the upstream's own hit counter."},
+  {name:"trace-correlation", s:"No cross-service trace assembly.", t:"Correlate one trace across multiple hops.", a:"Extends Day 18's tracer across 3 real HTTP services.", r:"One trace ID assembled coherently across 4 hops via real ParentSpanID markers."},
+  {name:"saga-pattern", s:"No cross-service transaction pattern.", t:"Implement the saga pattern with compensation.", a:"4 real services + orchestrator.", r:"A failed step triggered real reverse-order compensating calls, re-verified via each service's own state."},
+  {name:"outbox-pattern", s:"No transactional-outbox guarantee.", t:"Write an event atomically with its cause.", a:"Real SQLite transaction + background publisher.", r:"A forced mid-transaction failure rolled both back; 3 real retries, no drops."},
+  {name:"cqrs", s:"No separated read/write models.", t:"Build CQRS with real eventual consistency.", a:"Normalized write model, denormalized read model, event bus.", r:"A query immediately after a write returns nothing yet — provably eventual."},
+  {name:"idempotency-keys", s:"No idempotent-request handling.", t:"Collapse concurrent duplicate requests.", a:"Idempotency-key store.", r:"50 truly concurrent retries collapsed to exactly 1 execution."},
+  {name:"cache-invalidation", s:"No multi-node cache coherence.", t:"Invalidate stale copies across nodes.", a:"Pub/sub across 3 real cache-node goroutines.", r:"A write on one node evicted the others' stale copy; unrelated keys stayed untouched."}
+ ]},
+{code:"07", name:"Messaging &amp; Streaming", days:"71–80",
+ dek:"The messaging backbone: durable logs, exactly-once semantics, live aggregation. Three days deliberately extend Days 3/7/8/11 instead of restarting.",
+ theoretical:"Log-structured messaging, idempotent consumption, tumbling vs. sliding windows.",
+ practical:"Concurrency races run for real and measured; 3 days prove composability by reusing, not rewriting, earlier logic.",
+ status:"10/10 verified",
+ concepts:[
+  {name:"log-broker", s:"No durable partitioned log.", t:"Build a Kafka-lite broker.", a:"Append-only log + consumer-group offsets.", r:"A \"reconnecting\" consumer resumed from its last committed offset, not the start."},
+  {name:"pubsub-wildcards", s:"No topic-wildcard routing.", t:"Match NATS-style */&gt; wildcards.", a:"Real concurrent subscriber goroutines.", r:"orders.* and orders.created both matched; users.* received nothing from orders.*."},
+  {name:"msg-dedup", s:"No TTL-windowed dedup.", t:"Collapse duplicate messages by ID.", a:"Cached-result dedup service.", r:"50 concurrent duplicates collapsed to 1 execution; expired IDs treated as new again."},
+  {name:"windowed-batcher", s:"No time-window batching.", t:"Implement tumbling + sliding windows.", a:"Real wall-clock ticker-based batcher.", r:"A sliding window legitimately re-emitted the same item across overlapping batches."},
+  {name:"stream-agg-v2", s:"Day 8's aggregator handled one series only.", t:"Generalize to multi-series, two windowing strategies.", a:"Ports Day 8's code, adds tumbling alongside sliding.", r:"Two tag-grouped series stayed fully independent across 200 real samples."},
+  {name:"dlq-reprocessor", s:"Day 7's DLQ had no reprocessing tool.", t:"Add manual DLQ reprocessing.", a:"Ports Day 7's Event/DeadLetter model.", r:"A reprocess pass removed only the recovered entry; the down one stayed, attempt count incremented."},
+  {name:"event-replay-tool", s:"Day 11's store could only replay to \"now.\"", t:"Add point-in-time replay.", a:"Ports Day 11's EventRecord/Rebuild logic.", r:"Replaying up to a specific index gave a state provably different from the final one."},
+  {name:"priority-job-queue", s:"No priority-aware job queue.", t:"Interrupt low-priority work for high-priority jobs.", a:"container/heap blocking priority queue.", r:"3 high-priority jobs submitted mid-stream ran consecutively ahead of the backlog."},
+  {name:"backpressure-consumer", s:"No quantified backpressure + integrity check.", t:"Prove zero data loss under load.", a:"Bounded channel, matching Day 32's rigor.", r:"150 items under buffer-2 stress all received exactly once, in order, uncorrupted."},
+  {name:"graphql-server", s:"No GraphQL-shaped query layer.", t:"Resolve nested fields over real HTTP.", a:"Hand-rolled parser + executor.", r:"employee{department{name}} resolved via a genuine second HTTP call, per-record."}
+ ]},
+{code:"08", name:"API Platform Tooling", days:"81–90",
+ dek:"The 20 core services had no versioning strategy, spec generation, or live-config story. Here the \"wrong way\" is run side-by-side with the fix to prove the difference.",
+ theoretical:"API lifecycle management, config-as-code, progressive rollout strategy.",
+ practical:"The \"wrong way\" is run side-by-side with the fix to prove the difference, not assert it.",
+ status:"10/10 verified",
+ concepts:[
+  {name:"openapi-gen", s:"No spec generated from real types.", t:"Reflect Go structs into OpenAPI 3.0.", a:"Reflection over json tags/kinds.", r:"An independent validator (kin-openapi) accepted it with zero errors, rejected a broken one."},
+  {name:"api-versioning", s:"No versioning strategy for the API surface.", t:"Support URL- and header-based versioning.", a:"Same resource, two dispatch paths.", r:"Header-based output matched URL-based output byte-for-byte for the same version."},
+  {name:"cursor-pagination", s:"Offset pagination silently breaks under mutation.", t:"Build identity-anchored cursor pagination.", a:"Cursor encodes the last item's own ID.", r:"Offset pagination skipped/repeated rows under concurrent mutation; cursor pagination didn't."},
+  {name:"webhook-hmac", s:"Day 7's dispatcher had no signing.", t:"Add HMAC signing + replay protection.", a:"timestamp.nonce.body signature scheme.", r:"A tampered byte failed verification; a replayed request was rejected via nonce tracking."},
+  {name:"apikey-tiers", s:"Day 3's limiter was one bucket for everyone.", t:"Add per-key tiers.", a:"Ports Day 3's TokenBucket per tier.", r:"Free/pro/enterprise measured 7/30/150 real allowed requests under identical load."},
+  {name:"schema-validation", s:"No request/response schema enforcement.", t:"Validate both directions against JSON Schema.", a:"santhosh-tekuri/jsonschema middleware.", r:"A bad request named the exact failing field; a server bug was caught before reaching the client."},
+  {name:"feature-flags", s:"No live flag/rollout system.", t:"Toggle behavior with zero restart.", a:"Percentage rollout + per-user overrides.", r:"A 30% rollout over 20,000 users measured 29.98%."},
+  {name:"ab-testing", s:"No deterministic experiment assignment.", t:"Assign variants without math/rand.", a:"Pure hash of (seed, experiment, user).", r:"A separate instance with the same seed reproduced identical assignments for 1000/1000 users."},
+  {name:"config-hot-reload", s:"No live config reload.", t:"Change behavior with no restart.", a:"fsnotify-watched config file.", r:"A real file write changed 3 live endpoints' behavior in the same process, twice in a row."},
+  {name:"gateway-plugins", s:"Day 15's gateway had a static plugin set.", t:"Load plugins from disk at runtime.", a:"JSON-manifest plugin loading, core untouched.", r:"A third plugin was hot-added to a running process with zero core-code edits."}
+ ]},
+{code:"09", name:"Testing, Tooling &amp; the Capstone", days:"91–100",
+ dek:"Zero tests existed in either real production app. Here Go proves itself as a tooling language, then the other 99 days prove they compose.",
+ theoretical:"Property-based &amp; consumer-driven contract testing, chaos engineering, system composition.",
+ practical:"The capstone's circuit breaker trips live when profilesvc is killed, and recovers live when it returns.",
+ status:"10/10 verified",
+ concepts:[
+  {name:"image-thumbnails", s:"No image-processing service.", t:"Decode + resize without a shortcut library.", a:"Stdlib PNG/JPEG decode + hand-written bilinear resize.", r:"Verified over real long-running HTTP."},
+  {name:"video-transcode", s:"No async media-processing pipeline.", t:"Wrap ffmpeg with a real job queue.", a:"Worker pool + retry logic.", r:"A transient failure recovered on retry; a broken codec exhausted retries and stayed Failed."},
+  {name:"pdf-reports", s:"No document-generation service.", t:"Generate PDFs from live gRPC data.", a:"Pure-Go fpdf over Day 9's employee data.", r:"Re-parsed raw PDF bytes for real ISO 32000 markers, independent of fpdf's own success flag."},
+  {name:"s3-mini", s:"No object-storage service.", t:"Build an S3-compatible store.", a:"Filesystem-backed PUT/GET/DELETE/LIST.", r:"Verified compatible with the real, independent AWS SDK v2 S3 client."},
+  {name:"static-site-gen", s:"No static-site build pipeline.", t:"Render Markdown + front matter to HTML.", a:"goldmark rendering + asset copy.", r:"Independently re-parsed with a separate HTML parser to verify title/tags/link integrity."},
+  {name:"property-testing", s:"No property-based tests anywhere.", t:"Property-test Days 40/41/42's logic.", a:"pgregory.net/rapid, hundreds of random cases.", r:"A deliberately buggy LRU variant proven to fail live, with rapid's own shrunk counterexample."},
+  {name:"contract-testing", s:"No consumer-driven contract tests.", t:"Verify a real provider against a pact file.", a:"\"Pact-lite\" contract replayed as real HTTP against Day 5's provider.", r:"A deliberately corrupted contract caught exactly one real mismatch."},
+  {name:"load-tester", s:"No load-testing tool.", t:"Build a mini-k6 against a real rate limiter.", a:"Concurrent virtual users vs. Day 3's token bucket.", r:"A real bug — a shared bucket leaking state between runs — found and fixed."},
+  {name:"chaos-injector", s:"No fault-injection tooling.", t:"Prove resilience under real chaos.", a:"HTTP chaos proxy + real docker kill.", r:"A retrying client recovered from 74.5% to 99.4% success under identical chaos."},
+  {name:"go-social-v2 (capstone)", s:"99 days had never been proven to compose.", t:"Build one system from real, imported pieces.", a:"4 services importing Days 3, 5, 9, 11/77, 12, 15, 16, 80, 87, 99.", r:"A live circuit-breaker trip/recovery when profilesvc is killed/restarted; 2 new integration bugs caught."}
+ ]},
+
+{code:"10", name:"CoverGo · Measurement Foundation", days:"S0·U1·U2", daysLabel:"V5 · SPRINTS S0 · U1 · U2", unit:"CONCEPT",
+ dek:"A different body of work: five real V5 services (GoGate, GoStream, GoRender, GoFlare, GoSnow) whose featureGo.md pitch was never measured. Before touching a hot path, each gets the instruments.",
+ theoretical:"Continuous benchmarking, statistical bench comparison, CPU/heap/mutex/block profiling, fuzz-as-regression.",
+ practical:"Zero CI existed for any of the 5 repos. All 5 now run vet → build → -race → static binary → bench → fuzz, and the first heap profile picked the next sprint.",
+ status:"3/3 landed · 5 repos green",
+ concepts:[
+  {name:"ci-race-fuzz-bench", s:"Five services, zero CI. <code>go test -race</code> had never run; no benchmarks; no fuzz corpus anywhere.", t:"Give every repo a measurement harness before optimising anything.", a:"Makefile + GitHub Actions per repo: vet → build → <code>-race</code> → <code>CGO_ENABLED=0</code> static binary → bench smoke → a fuzz job.", r:"All 5 green. Fuzz targets for every hand-rolled parser — JWT, RFC 6455, Sentry envelopes, SQL — no crashers."},
+  {name:"hot-path-benchmarks", s:"featureGo.md claims 6k→90k rps and 15k→300k conns, flagged “indicative, not measured on your data.”", t:"Put a <code>testing.B</code> on every operation carrying a performance claim.", a:"<code>bench/latest.txt</code> at <code>-count=6</code> per repo: proxy chain, hub fan-out sweep, plan compile, ingest core, catalog path.", r:"GoGate cache path measured 22× faster than the proxy. GoStream fan-out is linear at 2 allocs/op — the baseline the rest is measured against."},
+  {name:"pprof-on-the-admin-plane", s:"No profiling anywhere. GoGate already had an admin listener doing nothing with it.", t:"Expose CPU / heap / mutex / block profiles without opening them to traffic.", a:"<code>internal/debug</code> in all 5: <code>net/http/pprof</code> on a separate private listener; <code>-mutex-profile</code> / <code>-block-profile</code> flags.", r:"The first heap profile found 65% of GoGate's proxy allocations in one call — <code>ReverseProxy.copyBuffer</code>. That became sprint U7."}
+ ]},
+
+{code:"11", name:"CoverGo · Allocation & the Runtime", days:"U4·U6·U7·U9", daysLabel:"V5 · SPRINTS U4 · U6 · U7 · U9", unit:"CONCEPT",
+ dek:"The pprof findings, acted on. Escape analysis read for real, buffers pooled on the two hottest paths, the runtime made container-aware, and one unsafe fast-path added — only because the benchmark justified it.",
+ theoretical:"Stack vs. heap escape, sync.Pool lifecycle, cgroup-aware GOMAXPROCS, word-at-a-time XOR via unsafe.",
+ practical:"Every change gated on a benchmark: -58% B/op on the proxy, 0 allocs/op on the broadcast, ~0 allocs/frame on the reader, 7.8× on the unmask.",
+ status:"4/4 landed · all benched",
+ concepts:[
+  {name:"escape-analysis", s:"<code>go build -gcflags=-m</code> had never been read for GoStream's RFC 6455 frame path.", t:"Kill the per-frame heap allocations in the hand-rolled reader/writer.", a:"Moved the header scratch arrays (h / ext / mask / head) off the stack-that-escaped onto per-<code>Conn</code> fields; package-level sentinel errors.", r:"<code>BenchmarkReadFrame</code>: ~0 allocs/frame steady-state — 5 allocations total for 4096 frames."},
+  {name:"sync-pool", s:"pprof: GoGate's proxy was 65% <code>copyBuffer</code>; GoStream's <code>Publish</code> allocated two slices sized to the subscriber count.", t:"Pool the buffers on the two hottest paths.", a:"<code>ReverseProxy.BufferPool</code> (32 KiB <code>sync.Pool</code>) + a pooled cache-miss writer; <code>Publish</code> rewritten single-pass with a pooled <code>[]*Client</code> + atomic counters.", r:"GoGate proxy <b>B/op −58% geomean</b>. GoStream broadcast <b>0 allocs/op up to 10k subscribers</b> — was 24 KiB / 2 allocs at 1k."},
+  {name:"runtime-tuning", s:"GoRender sized its ffmpeg pool from <code>runtime.NumCPU()</code> — the host's cores, not the container's quota.", t:"Make the runtime cgroup-aware and legible at boot.", a:"Worker default → <code>runtime.GOMAXPROCS(0)</code> (cgroup-aware on 1.25+); <code>debug.LogRuntime</code> logs effective GOMAXPROCS / GOMEMLIMIT / GOGC in all 5.", r:"A 2-CPU container on a 32-core host now sizes the pool to 2, not 32."},
+  {name:"unsafe-unmask", s:"WebSocket unmasking was a byte-at-a-time XOR loop on every inbound frame.", t:"Unmask a machine word at a time — if a benchmark justifies the <code>unsafe</code>.", a:"<code>unsafe.Add</code> word loop over a word-aligned repeated key; <code>//go:build !purego</code> with a plain-Go fallback file.", r:"<b>7.8×</b> — 205 ns/op at 19.9 GB/s vs the fallback's 1595 ns/op. Verified byte-for-byte against a reference; <code>go vet</code> clean; fuzz clean."}
+ ]},
+
+{code:"12", name:"CoverGo · The Concurrency Toolkit", days:"U16·U17·U18·U19", daysLabel:"V5 · SPRINTS U16 · U17 · U18 · U19", unit:"CONCEPT",
+ dek:"Hand-rolled WaitGroups and coalescing maps replaced with golang.org/x/sync, plus cost-weighted admission and an explicit, leak-checked pipeline contract. One swap fixed a latent deadlock.",
+ theoretical:"errgroup fail-fast, singleflight stampede collapse, weighted semaphores, bounded structured concurrency.",
+ practical:"Every adoption carries a test that would fail without it — fail-fast cancellation, panic that surfaces instead of hangs, exactly-one heavy job, zero goroutine leak.",
+ status:"4/4 landed · GoSnow legs blocked on U10",
+ concepts:[
+  {name:"errgroup", s:"Fan-out was a hand-rolled <code>WaitGroup</code> + error channel; GoRender probed concat clips one <code>ffprobe</code> at a time.", t:"Adopt <code>x/sync/errgroup</code> where one failure should cancel the siblings.", a:"GoFlare pipeline workers under <code>errgroup.WithContext</code>; GoRender probes all clips concurrently with <code>SetLimit(NumCPU)</code> and fail-fast.", r:"<code>TestConcatProbeFailFast</code>: the first bad clip cancels the rest. A dead pipeline worker tears the whole group down cleanly."},
+  {name:"singleflight", s:"GoGate's cache-miss coalescing was a hand-rolled <code>call</code>/<code>WaitGroup</code> — and it deadlocked every coalesced waiter forever if <code>fill()</code> panicked.", t:"Swap it for <code>x/sync/singleflight</code> (the future.md names it explicitly).", a:"<code>singleflight.Group</code> for miss coalescing; the fill and the cache decision both run inside the closure, once per stampede.", r:"<code>TestCoalesce</code> still proves 20 misses → 1 upstream call. <code>TestFillPanicDoesNotWedge</code> proves the panic now surfaces instead of hanging."},
+  {name:"semaphore", s:"GoRender ran N ffmpeg jobs regardless of weight; GoGate had no per-upstream in-flight cap.", t:"Bound concurrency by cost, not count.", a:"<code>spec.Weight()</code> (1–4 by pixel count) against a <code>semaphore.NewWeighted</code> budget; <code>internal/inflight</code> per-route <code>MaxInFlight</code> → 503 + Retry-After.", r:"<code>TestPoolCostWeightedAdmission</code>: budget 4, two 4K jobs → exactly one encodes at a time even with idle workers."},
+  {name:"structured-pipelines", s:"The ingest pipeline had backpressure but no documented shutdown order and no leak check; a failed render left a partial <code>.mp4</code>.", t:"Make the lifecycle explicit and provably clean.", a:"Documented the one-bounded-stage contract; GoRender removes its partial output on a mid-encode failure.", r:"<code>TestPipelineNoGoroutineLeak</code> (synctest): exact goroutine count before and after <code>Wait()</code> — equal."}
+ ]},
+
+{code:"13", name:"CoverGo · Language & Test Machinery", days:"U8·U23·U24·P1·P3", daysLabel:"V5 · SPRINTS U8 · U23 · U24 · P1 · P3", unit:"CONCEPT",
+ dek:"go 1.26 features and modern test tooling the estate had skipped: range-over-func, testing.F, testing/synctest, real generics, and panic containment for the long-lived goroutines.",
+ theoretical:"iter.Seq iterators, coverage-guided fuzzing, deterministic virtual time, generic containers, recover discipline.",
+ practical:"Flaky sleep-and-poll tests made deterministic; four parsers fuzzed with no crashers; a process-killing panic contained to one connection.",
+ status:"5/5 landed · GoSnow/GoStream legs deferred",
+ concepts:[
+  {name:"iterators", s:"<code>go 1.26</code> everywhere, zero iterator use — every list API materialised a full slice.", t:"Return <code>iter.Seq</code> where it removes the intermediate allocation.", a:"<code>route.MemStore.All() iter.Seq[Route]</code>; <code>List()</code> became <code>slices.Collect(All())</code>.", r:"<code>TestAllSeqEarlyBreak</code>: a <code>break</code> releases the read lock; a following <code>List()</code> doesn't hang."},
+  {name:"fuzzing", s:"Four hand-rolled parsers — JWT, RFC 6455, Sentry envelope, SQL — had never seen a malformed byte on purpose.", t:"A seeded <code>testing.F</code> per parser, running in CI.", a:"FuzzHS256Verify, FuzzMatch, FuzzReadMessage, FuzzParseEnvelope, FuzzDecode, FuzzExecute — each with an oracle: no panic, nil error must mean genuinely valid.", r:"Hundreds of thousands of executions per target across the session — zero crashers found."},
+  {name:"synctest", s:"Time-dependent tests slept and hoped: <code>TestCoalesce</code> slept 20ms for 20 goroutines to pile up; the pipeline test polled for 2s.", t:"Make them deterministic with <code>testing/synctest</code> (stable in 1.25).", a:"<code>synctest.Test</code> bubbles + <code>synctest.Wait()</code> in GoFlare (pipeline), GoRender (queue), GoGate (cache).", r:"<code>TestPushCtxCancelWhenFull</code> now asserts the deadline fires at <i>exactly</i> 20ms; the pipeline test runs in ~0ms."},
+  {name:"generics", s:"Three trivial generic helpers in the whole estate; GoGate hand-rolled “map + mutex + expiry” in more than one place.", t:"Extract the pattern into one generic container.", a:"<code>internal/ttlcache</code> — <code>Cache[K comparable, V any]</code>; <code>cache.Cache</code> now embeds <code>ttlcache.Cache[string, *Response]</code>.", r:"~30 lines of duplicated map / lock / expiry logic gone; tested with int keys and pointer values."},
+  {name:"panic-recover", s:"An unrecovered panic in GoStream's write goroutine took the whole process down; a bad render silently removed a worker from GoRender's pool.", t:"Contain a panic to the one connection or job it happened in.", a:"<code>server.guard</code> wraps both per-conn loops (recover → kill that client); <code>Pool.runGuarded</code> recovers a render (job fails, worker lives).", r:"<code>TestGuardContainsPanic</code>, <code>TestPoolSurvivesJobPanic</code> — the sibling loop / next job keeps working."}
+ ]},
+
+{code:"14", name:"CoverGo · The Wire", days:"P4·P8·P9", daysLabel:"V5 · SPRINTS P4 · P8 · P9", unit:"CONCEPT",
+ dek:"The transport layer the services had glossed over: real TLS with mutual auth, bounded IO composition around the ffmpeg subprocess, and the full httputil.ReverseProxy surface instead of its defaults.",
+ theoretical:"tls.Config hardening, x509 verification both directions, io.MultiWriter/TeeReader, per-route Transport.",
+ practical:"A real mTLS handshake against an in-memory CA; unbounded stderr capture made bounded; a per-route timeout that doesn't touch the others.",
+ status:"3/3 landed · GoFlare edge-TLS leg deferred",
+ concepts:[
+  {name:"tls-mtls", s:"GoGate had no TLS at all — plain <code>ListenAndServe</code>.", t:"Hardened TLS inbound, mutual TLS in both directions.", a:"<code>internal/tlsconf</code>: TLS 1.2 floor + pinned AEAD suites; <code>Server()</code> with optional <code>RequireAndVerifyClientCert</code>; <code>Upstream()</code> with CA pinning + a client cert.", r:"<code>TestMutualTLSEndToEnd</code> drives a real mTLS handshake against an in-memory CA — both directions verify, a certless client is refused."},
+  {name:"io-composition", s:"GoRender buffered <i>all</i> of ffmpeg's stderr into a <code>strings.Builder</code> — unbounded — and parsed <code>-progress</code> with no way to also log it.", t:"Bounded capture plus a tee to the debug log, without dropping a parser line.", a:"<code>tailWriter</code> (last 8 KiB) + <code>io.MultiWriter</code> for stderr; <code>io.TeeReader</code> on the progress stream.", r:"<code>slogWriter</code> splits lines across writes; stderr memory is flat regardless of how chatty the run is."},
+  {name:"reverse-proxy-depth", s:"<code>httputil.ReverseProxy</code> used at its most basic — one shared transport, no per-route control.", t:"Per-route transport and response-header timeout.", a:"<code>proxy.ForRoute(base, timeout)</code> clones the <code>*http.Transport</code> and caches it per (base, timeout); <code>Policy.UpstreamTimeout</code> wires it.", r:"<code>TestForRoutePerRouteTransport</code>: a slow-backend route can be tightened without touching the others."}
+ ]}
+];
+
+(function(){
+  var gen = document.getElementById('generated');
+  var phaseMap = document.getElementById('phase-map');
+  var frag = document.createDocumentFragment();
+  var railSections = []; // {id, label}
+
+  SECTIONS.forEach(function(sec, si){
+    var dividerId = 'div-' + sec.code;
+    var d = document.createElement('section');
+    d.className = 'slide divider';
+    d.id = dividerId;
+    d.dataset.label = 'S' + sec.code;
+    d.dataset.section = si;
+    d.innerHTML =
+      '<span class="phase-code">SECTION <b>' + sec.code + '</b> · ' + (sec.daysLabel || ('DAYS ' + sec.days)) + '</span>' +
+      '<h2>' + sec.name + '</h2>' +
+      '<p class="dek">' + sec.dek + '</p>' +
+      '<div class="concept-list">' + sec.concepts.map(function(c){ return '<span>' + c.name + '</span>'; }).join('') + '</div>' +
+      '<div class="concept-row"><div class="theoretical"><span class="k">Theoretical</span><p>' + sec.theoretical + '</p></div>' +
+      '<div class="practical"><span class="k">Practical</span><p>' + sec.practical + '</p></div></div>' +
+      '<span class="status-chip">' + sec.status + '</span>';
+    frag.appendChild(d);
+    railSections.push({ id: dividerId, label: 'P' + sec.code });
+
+    var mapBtn = document.createElement('button');
+    mapBtn.className = 'phase-map-row';
+    mapBtn.type = 'button';
+    mapBtn.innerHTML = '<span class="code">' + sec.days + '</span><span class="name">' + sec.name + ' — ' + sec.concepts.length + ' concepts</span><span class="count">' + sec.concepts.length + '</span>';
+    mapBtn.addEventListener('click', function(){ d.scrollIntoView({behavior: reduceMotion() ? 'auto':'smooth'}); });
+    phaseMap.appendChild(mapBtn);
+
+    sec.concepts.forEach(function(c, ci){
+      var s = document.createElement('section');
+      s.className = 'slide concept-slide';
+      s.dataset.section = si;
+      s.innerHTML =
+        '<div class="concept-head"><span class="day">' + (sec.unit || 'DAY') + ' ' + String(ci+1).padStart(2,'0') + ' / ' + sec.concepts.length + '</span><span class="sec">SECTION ' + sec.code + ' · ' + sec.name + '</span><h2>' + c.name + '</h2></div>' +
+        '<div class="star-diagram">' +
+          '<svg class="arrows"></svg>' +
+          '<div class="box situation"><span class="num">1</span><span class="k">Situation</span><p>' + c.s + '</p></div>' +
+          '<div class="box action"><span class="num">3</span><span class="k">Action</span><p>' + c.a + '</p></div>' +
+          '<div class="box task"><span class="num">2</span><span class="k">Task</span><p>' + c.t + '</p></div>' +
+          '<div class="box result"><span class="num">4</span><span class="k">Result</span><p>' + c.r + '</p></div>' +
+        '</div>';
+      frag.appendChild(s);
+    });
+  });
+
+  gen.replaceWith(frag);
+
+  // ---- draw STAR-flow arrows in real pixel coordinates (no viewBox distortion) ----
+  function layoutArrows(slide){
+    var diagram = slide.querySelector('.star-diagram');
+    if (!diagram) return;
+    var svg = diagram.querySelector('svg.arrows');
+    if (!svg) return;
+    if (window.innerWidth <= 760) { svg.innerHTML = ''; return; }
+
+    var dRect = diagram.getBoundingClientRect();
+    if (dRect.width === 0 || dRect.height === 0) return;
+    svg.setAttribute('viewBox', '0 0 ' + dRect.width + ' ' + dRect.height);
+
+    function anchor(el, xFrac, yFrac){
+      var r = el.getBoundingClientRect();
+      return { x: r.left - dRect.left + r.width * xFrac, y: r.top - dRect.top + r.height * yFrac };
+    }
+    var s = diagram.querySelector('.box.situation');
+    var t = diagram.querySelector('.box.task');
+    var a = diagram.querySelector('.box.action');
+    var r = diagram.querySelector('.box.result');
+
+    var p1 = anchor(s, 0.5, 1);   // Situation, bottom-center
+    var p2 = anchor(t, 0.5, 0);   // Task, top-center
+    var p3 = anchor(t, 1, 0.5);   // Task, right-center
+    var p4 = anchor(a, 0, 0.5);   // Action, left-center
+    var p5 = anchor(a, 0.5, 1);   // Action, bottom-center
+    var p6 = anchor(r, 0.5, 0);   // Result, top-center
+
+    var midX = (p3.x + p4.x) / 2;
+    var d1 = 'M' + p1.x + ',' + p1.y + ' L' + p2.x + ',' + p2.y;
+    var d2 = 'M' + p3.x + ',' + p3.y + ' C' + midX + ',' + p3.y + ' ' + midX + ',' + p4.y + ' ' + p4.x + ',' + p4.y;
+    var d3 = 'M' + p5.x + ',' + p5.y + ' L' + p6.x + ',' + p6.y;
+
+    svg.innerHTML =
+      '<path d="' + d1 + '" marker-end="url(#arrowhead)"></path>' +
+      '<path d="' + d2 + '" marker-end="url(#arrowhead)"></path>' +
+      '<path d="' + d3 + '" marker-end="url(#arrowhead)"></path>';
+  }
+
+  var allConceptSlides = Array.prototype.slice.call(document.querySelectorAll('.concept-slide'));
+  allConceptSlides.forEach(layoutArrows);
+
+  var arrowResizeTimer;
+  window.addEventListener('resize', function(){
+    clearTimeout(arrowResizeTimer);
+    arrowResizeTimer = setTimeout(function(){ allConceptSlides.forEach(layoutArrows); }, 200);
+  });
+
+  // ---- nav rail: coarse (cover, overview, 9 sections, closing) ----
+  var rail = document.getElementById('rail');
+  var railTargets = [
+    { id: 's-cover', label: 'COVER' },
+    { id: 's-overview', label: 'OVERVIEW' }
+  ].concat(railSections).concat([
+    { id: 's-closing', label: 'END·V3' },
+    { id: 's-closing-v5', label: 'END·V5' }
+  ]);
+
+  railTargets.forEach(function(rt){
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = rt.label;
+    btn.dataset.target = rt.id;
+    btn.addEventListener('click', function(){
+      document.getElementById(rt.id).scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth' });
+    });
+    rail.appendChild(btn);
+  });
+  var railBtns = Array.prototype.slice.call(rail.children);
+
+  function reduceMotion(){ return matchMedia('(prefers-reduced-motion: reduce)').matches; }
+
+  var deck = document.getElementById('deck');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var progressBar = document.querySelector('#progress > i');
+  var tally = document.getElementById('tally');
+  var totalConcepts = SECTIONS.reduce(function(n,s){ return n + s.concepts.length; }, 0);
+
+  function currentSlideIndex(){
+    var best = 0, bestDist = Infinity;
+    slides.forEach(function(s, i){
+      var r = s.getBoundingClientRect();
+      var dist = Math.abs(r.top);
+      if (dist < bestDist) { bestDist = dist; best = i; }
+    });
+    return best;
+  }
+
+  function updateChrome(){
+    var idx = currentSlideIndex();
+    var s = slides[idx];
+    var pct = (deck.scrollTop / (deck.scrollHeight - deck.clientHeight || 1)) * 100;
+    progressBar.style.width = Math.min(100, Math.max(0, pct)) + '%';
+
+    var sectionIdx = s.dataset.section;
+    railBtns.forEach(function(b){ b.setAttribute('aria-current', 'false'); });
+    if (sectionIdx === '-1' || sectionIdx === undefined) {
+      var match = railBtns.filter(function(b){ return b.dataset.target === s.id; })[0];
+      if (match) match.setAttribute('aria-current', 'true');
+      tally.textContent = s.dataset.label || '';
+    } else {
+      var target = railSections[+sectionIdx];
+      var btn = railBtns.filter(function(b){ return b.dataset.target === target.id; })[0];
+      if (btn) btn.setAttribute('aria-current', 'true');
+      if (s.classList.contains('concept-slide')) {
+        var nameEl = s.querySelector('h2');
+        var seen = 0;
+        for (var i = 0; i <= idx; i++) if (slides[i].classList.contains('concept-slide')) seen++;
+        tally.innerHTML = '<b>' + seen + '</b> / ' + totalConcepts + ' concepts';
+      } else {
+        tally.textContent = SECTIONS[+sectionIdx].name.replace(/&amp;/g,'&') + ' — divider';
+      }
+    }
+  }
+
+  deck.addEventListener('scroll', function(){ requestAnimationFrame(updateChrome); }, { passive: true });
+  updateChrome();
+
+  function goToSlide(dir){
+    var idx = currentSlideIndex();
+    var target = slides[Math.min(Math.max(idx + dir, 0), slides.length - 1)];
+    target.scrollIntoView({ behavior: reduceMotion() ? 'auto' : 'smooth' });
+  }
+
+  // ---- keyboard: PowerPoint-style step navigation ----
+  window.addEventListener('keydown', function(e){
+    var next = ['ArrowDown','ArrowRight','PageDown',' ','Spacebar'];
+    var prev = ['ArrowUp','ArrowLeft','PageUp'];
+    if (next.indexOf(e.key) !== -1) { e.preventDefault(); goToSlide(1); }
+    else if (prev.indexOf(e.key) !== -1) { e.preventDefault(); goToSlide(-1); }
+  });
+
+  // ---- mouse wheel: one gesture = one slide, like a slide deck ----
+  var wheelLocked = false;
+  deck.addEventListener('wheel', function(e){
+    e.preventDefault();
+    if (wheelLocked || Math.abs(e.deltaY) < 2) return;
+    wheelLocked = true;
+    goToSlide(e.deltaY > 0 ? 1 : -1);
+    setTimeout(function(){ wheelLocked = false; }, 650);
+  }, { passive: false });
+
+  // ---- fullscreen / focus mode ----
+  // Real Fullscreen API is tried first, but artifact viewers commonly render
+  // this page inside a sandboxed iframe that silently rejects it -- so a
+  // CSS "focus mode" (hide the rail/progress chrome) always applies too,
+  // guaranteeing the button visibly does something either way.
+  var fsBtn = document.getElementById('fsBtn');
+  function setFocusUI(on){
+    document.documentElement.classList.toggle('is-focus', on);
+    fsBtn.textContent = on ? '⤢' : '⛶';
+    fsBtn.setAttribute('aria-pressed', on ? 'true' : 'false');
+    fsBtn.setAttribute('aria-label', on ? 'Exit focus mode' : 'Enter focus mode');
+  }
+  fsBtn.addEventListener('click', function(){
+    var turningOn = !document.documentElement.classList.contains('is-focus');
+    setFocusUI(turningOn);
+    if (turningOn && document.fullscreenEnabled && !document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(function(){ /* focus mode still applied */ });
+    } else if (!turningOn && document.fullscreenElement) {
+      document.exitFullscreen().catch(function(){});
+    }
+  });
+  document.addEventListener('fullscreenchange', function(){
+    // Only react to the real API actually exiting (e.g. the user pressed
+    // Esc) -- don't touch focus mode on a successful *entry*, that's
+    // already been set by the click handler above.
+    if (!document.fullscreenElement) setFocusUI(false);
+  });
+  window.addEventListener('keydown', function(e){
+    if (e.key === 'Escape' && document.documentElement.classList.contains('is-focus') && !document.fullscreenElement) {
+      setFocusUI(false);
+    }
+  });
+
+  deck.tabIndex = 0;
+  deck.focus();
+})();
+</script>

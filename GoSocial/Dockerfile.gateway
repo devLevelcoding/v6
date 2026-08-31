@@ -1,0 +1,17 @@
+# Gateway: JWT-auth plugin gating access, fronts the main API at
+# /api/social/*.
+#
+#   docker build -t go-social-v2-gateway -f Dockerfile.gateway .
+#   docker run --rm -p 8410:8410 go-social-v2-gateway
+
+FROM golang:1.25-alpine AS builder
+WORKDIR /src
+COPY . .
+RUN go mod download
+RUN CGO_ENABLED=0 GOOS=linux go build -o /out/gateway ./cmd/gateway
+
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates
+WORKDIR /app
+COPY --from=builder /out/gateway .
+ENTRYPOINT ["./gateway"]

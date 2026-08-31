@@ -1,0 +1,17 @@
+# profilesvc: the internal gRPC service the main API calls through a
+# circuit breaker.
+#
+#   docker build -t go-social-v2-profilesvc -f Dockerfile.profilesvc .
+#   docker run --rm -p 9091:9091 go-social-v2-profilesvc
+
+FROM golang:1.25-alpine AS builder
+WORKDIR /src
+COPY . .
+RUN go mod download
+RUN CGO_ENABLED=0 GOOS=linux go build -o /out/profilesvc ./cmd/profilesvc
+
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates
+WORKDIR /app
+COPY --from=builder /out/profilesvc .
+ENTRYPOINT ["./profilesvc"]

@@ -1,0 +1,18 @@
+# GraphQL backing service: serves /users/{id} and /posts/{id} over HTTP,
+# backed by the main API's state via GET /internal/state
+# (internal/statefetch) -- a separate service/container, not shared memory.
+#
+#   docker build -t go-social-v2-graphql-backing -f Dockerfile.graphqlbacking .
+#   docker run --rm -p 8452:8452 -e SOCIAL_API_ADDR=http://go-social-v2:8400 go-social-v2-graphql-backing
+
+FROM golang:1.25-alpine AS builder
+WORKDIR /src
+COPY . .
+RUN go mod download
+RUN CGO_ENABLED=0 GOOS=linux go build -o /out/graphqlbacking ./cmd/graphqlbacking
+
+FROM alpine:3.20
+RUN apk add --no-cache ca-certificates
+WORKDIR /app
+COPY --from=builder /out/graphqlbacking .
+ENTRYPOINT ["./graphqlbacking"]

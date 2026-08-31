@@ -1,0 +1,34 @@
+// Proto for the internal profile-lookup gRPC service.
+syntax = "proto3";
+
+package socialv2;
+option go_package = "gosocial/pb";
+
+message Profile {
+  string user_id         = 1;
+  string username         = 2;
+  string display_name     = 3;
+  string bio              = 4;
+  int32  follower_count   = 5;
+  int32  following_count  = 6;
+  int32  post_count       = 7;
+}
+
+message GetProfileRequest {
+  string user_id = 1;
+}
+
+message ListProfilesRequest {
+  repeated string user_ids = 1;
+}
+
+service ProfileService {
+  // Fetch one user's profile by ID.
+  rpc GetProfile(GetProfileRequest) returns (Profile);
+
+  // Stream profiles for a batch of user IDs.
+  rpc ListProfiles(ListProfilesRequest) returns (stream Profile);
+
+  // Create or update a user's profile record.
+  rpc UpsertProfile(Profile) returns (Profile);
+}

@@ -1,0 +1,36 @@
+services:
+  go-social-v2-profilesvc:
+    build:
+      context: .
+      dockerfile: Dockerfile.profilesvc
+    ports: ["9091:9091"]
+
+  go-social-v2-graphql-backing:
+    build:
+      context: .
+      dockerfile: Dockerfile.graphqlbacking
+    environment:
+      SOCIAL_API_ADDR: http://go-social-v2:8400
+    depends_on:
+      - go-social-v2
+
+  go-social-v2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports: ["8400:8400"]
+    environment:
+      PROFILESVC_ADDR: go-social-v2-profilesvc:9091
+      GRAPHQL_BACKING_ADDR: http://go-social-v2-graphql-backing:8452
+    depends_on:
+      - go-social-v2-profilesvc
+
+  go-social-v2-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile.gateway
+    ports: ["8410:8410"]
+    environment:
+      SOCIAL_API_UPSTREAM: http://go-social-v2:8400
+    depends_on:
+      - go-social-v2
